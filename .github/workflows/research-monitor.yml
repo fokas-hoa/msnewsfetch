@@ -1,0 +1,57 @@
+name: MS Research Monitor
+
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/research-monitor.yml'
+      - 'monitor/watchlist.json'
+      - 'scripts/monitor_research.py'
+      - 'scripts/restore_monitor_state.py'
+      - 'scripts/publish_monitor_issue.py'
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  group: ms-research-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore previous monitor state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/restore_monitor_state.py
+      - name: Scan registries, literature and official programme pages
+        run: python scripts/monitor_research.py
+      - name: Create review issue only for substantive developments
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/publish_monitor_issue.py
+      - name: Save monitor state
+        uses: actions/upload-artifact@v4
+        with:
+          name: msnews-monitor-state
+          path: monitor/state.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Save run report
+        uses: actions/upload-artifact@v4
+        with:
+          name: msnews-monitor-report
+          path: monitor/report.json
+          retention-days: 30

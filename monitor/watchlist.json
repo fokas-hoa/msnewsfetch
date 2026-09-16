@@ -1,0 +1,32 @@
+{
+  "clinicaltrials": [
+    {"id":"NCT02521311","name":"ReCOVER"},
+    {"id":"NCT03910738","name":"TOTEM-RRMS"},
+    {"id":"NCT04002934","name":"ReWRAP"},
+    {"id":"NCT05131828","name":"CCMR Two"},
+    {"id":"NCT05338450","name":"RESTORE"},
+    {"id":"NCT05349474","name":"Metformin PMS"},
+    {"id":"NCT05359653","name":"ReVIVE"},
+    {"id":"NCT05893225","name":"MACSiMiSE-BRAIN"},
+    {"id":"NCT06065670","name":"ReINFORCE"},
+    {"id":"NCT06083753","name":"PIPE-307 / VISTA"},
+    {"id":"NCT06463743","name":"Metformin in aging MS"},
+    {"id":"NCT06595706","name":"Lucid-MS Phase 1 MAD"},
+    {"id":"NCT06796504","name":"SetPoint MS Pilot"}
+  ],
+  "ctis": [
+    {"id":"2023-507874-42-00","name":"MODIF-MS / ifenprodil"},
+    {"id":"2025-522922-11-00","name":"ACT-1004-1239"}
+  ],
+  "official_pages": [
+    {"name":"Pheno / PTD802","url":"https://phenotherapeutics.com/category/clinical-trials/","keywords":["PTD802","first-in-human","phase 1","phase i","IND","clinical trial"]},
+    {"name":"Quantum BioPharma / Lucid-MS","url":"https://www.quantumbiopharma.com/lucid-ms","keywords":["Lucid-MS","Lucid-21-302","phase 2","phase 1","IND","clinical trial"]},
+    {"name":"Mainz / theophylline patch","url":"https://cnb-idn.biologie.uni-mainz.de/a-transdermal-patch-to-promote-remyelination-in-multiple-sclerosis-patients/","keywords":["theophylline","phase i","phase 1","GMP","BfArM","clinical trial"]},
+    {"name":"NeuOrphan / Dioprotectome","url":"https://neuorphan.com/","keywords":["Dioprotectome","DITPA","clinical trial","preclinical","phase 1","phase i"]},
+    {"name":"Rutgers / mGluR5 agonists","url":"https://techfinder.rutgers.edu/tech/Small_Molecule_mGlur5_Agonists_for_Remyelination_in_Multiple_Sclerosis","keywords":["mGlur5","mGluR5","remyelination","license","clinical","development"]},
+    {"name":"Scripps / Lairson publications","url":"https://lairson.scripps.edu/publications.html","keywords":["oligodendrocyte","remyelination","combination","multiple sclerosis","M1R"]}
+  ],
+  "program_aliases": [
+    "CCMR Two","CCMR2","OCTOPUS","metformin","MACSiMiSE-BRAIN","ifenprodil","MODIF-MS","ReCOVER","ReVIVE","ReINFORCE","ACT-1004-1239","PTD802","PIPE-307","VISTA","SetPoint","TOTEM-RRMS","Lucid-MS","Lucid-21-302","Dioprotectome","DITPA","CN045","bavisant","mGluR5","directly induced neural stem","iNSC","oligodendrocyte progenitor","OPC differentiation","CRISPR"
+  ]
+}
