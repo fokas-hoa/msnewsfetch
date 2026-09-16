@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STATE_PATH = ROOT / "monitor" / "discovery_state.json"
 REPORT_PATH = ROOT / "monitor" / "discovery_report.json"
 ACTRN_RE = re.compile(r"\bACTRN\d{14}[A-Za-z]?\b", re.I)
+BLOCK_MARKERS = ("access denied", "forbidden", "captcha", "temporarily unavailable", "service unavailable")
 
 
 def main() -> int:
@@ -26,7 +27,6 @@ def main() -> int:
         from selenium import webdriver
         from selenium.webdriver.chrome.options import Options
         from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
     except Exception as e:
         print(f"ANZCTR browser fallback unavailable: selenium import failed ({type(e).__name__})")
         return 0
@@ -45,6 +45,7 @@ def main() -> int:
 
     ids: set[str] = set()
     browser_warnings: list[str] = []
+    accessible_queries = 0
     driver = None
     try:
         driver = webdriver.Chrome(options=options)
@@ -56,12 +57,18 @@ def main() -> int:
             })
             try:
                 driver.get(url)
-                # The site may populate results after initial page load.
-                WebDriverWait(driver, 15).until(
-                    lambda d: "ACTRN" in d.page_source or "No trial" in d.page_source or "No records" in d.page_source
-                )
-                time.sleep(1)
-                ids.update(x.upper() for x in ACTRN_RE.findall(driver.page_source))
+                # ANZCTR may return a legitimate empty result without a machine-readable
+                # "no results" marker. Give client-side rendering a short fixed window,
+                # then treat a normal registry page with zero ACTRN matches as zero results.
+                time.sleep(3)
+                source = driver.page_source
+                low = source.lower()
+                if any(marker in low for marker in BLOCK_MARKERS):
+                    browser_warnings.append(f"ANZCTR browser access blocked for query: {query!r}")
+                    continue
+                if "australian new zealand clinical trials registry" in low or "trial search" in low or "anzctr" in low:
+                    accessible_queries += 1
+                ids.update(x.upper() for x in ACTRN_RE.findall(source))
             except Exception as e:
                 browser_warnings.append(f"ANZCTR browser query failed: {query!r} ({type(e).__name__})")
 
@@ -72,7 +79,7 @@ def main() -> int:
             record_url = f"https://www.anzctr.org.au/{actrn}.aspx"
             try:
                 driver.get(record_url)
-                time.sleep(0.7)
+                time.sleep(0.8)
                 body = driver.find_element(By.TAG_NAME, "body").text
                 title = actrn
                 for label in ("Public title", "Scientific title"):
@@ -111,9 +118,10 @@ def main() -> int:
     state.setdefault("seen", {})["anzctr"] = sorted(set(state.get("seen", {}).get("anzctr", [])) | candidate_keys)
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    # If Chrome reached at least one query without query-level errors, treat ANZCTR
-    # as available and replace direct-client warnings with any narrower browser warnings.
-    if ids or not browser_warnings:
+    # If Chrome could render at least one genuine ANZCTR search page, the registry
+    # is reachable; direct urllib failures are implementation degradation, not a
+    # registry-health warning. Keep only real browser access/record failures.
+    if accessible_queries:
         report["warnings"] = [
             w for w in report.get("warnings", [])
             if not w.startswith("ANZCTR crawler index unavailable")
@@ -132,7 +140,10 @@ def main() -> int:
                 existing.add(dd.key(c))
 
     REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"ANZCTR browser IDs={len(ids)}; candidates={len(candidates)}; new={len(new_candidates)}; warnings={len(browser_warnings)}")
+    print(
+        f"ANZCTR browser queries accessible={accessible_queries}; IDs={len(ids)}; "
+        f"candidates={len(candidates)}; new={len(new_candidates)}; warnings={len(browser_warnings)}"
+    )
     return 0
 
 
