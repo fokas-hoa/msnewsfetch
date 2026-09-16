@@ -1,4 +1,5 @@
 {
+  "config_version": 2,
   "lookback_days": 45,
   "clinicaltrials_queries": [
     "multiple sclerosis remyelination",
