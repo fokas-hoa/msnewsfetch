@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   issues: write
 
@@ -47,9 +47,15 @@ jobs:
         run: python scripts/anzctr_browser_discovery.py
       - name: Canonicalise programme identity and score review confidence
         run: python scripts/enrich_discovery_report.py
-      - name: Keep notifications high-signal
+      - name: Keep publication high-signal
         run: python scripts/filter_discovery_report.py
-      - name: Create review issue only for new high-signal candidates
+      - name: Auto-publish high-signal live discoveries
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MSNEWS_PUBLISH_MODE: weekly
+          MSNEWS_LIVE_BRANCH: live-data
+        run: python scripts/publish_live_feed.py
+      - name: Create audit issue for new high-signal candidates
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/publish_discovery_issue.py
