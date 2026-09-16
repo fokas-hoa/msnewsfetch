@@ -12,9 +12,10 @@ on:
       - 'scripts/monitor_research.py'
       - 'scripts/restore_monitor_state.py'
       - 'scripts/publish_monitor_issue.py'
+      - 'scripts/publish_live_feed.py'
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   issues: write
 
@@ -38,7 +39,13 @@ jobs:
         run: python scripts/restore_monitor_state.py
       - name: Scan registries, literature and official programme pages
         run: python scripts/monitor_research.py
-      - name: Create review issue only for substantive developments
+      - name: Auto-publish deterministic live updates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MSNEWS_PUBLISH_MODE: daily
+          MSNEWS_LIVE_BRANCH: live-data
+        run: python scripts/publish_live_feed.py
+      - name: Create audit issue for substantive developments
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/publish_monitor_issue.py
