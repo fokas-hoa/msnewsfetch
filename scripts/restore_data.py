@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Restore generated site data from compressed base64 payloads."""
+"""Restore the canonical structured research dataset from compressed payload parts.
+
+RSS is intentionally not restored from a payload. It is generated deterministically
+from news.json by scripts/build_rss.py so there is only one content source of truth.
+"""
 from __future__ import annotations
 import base64
 import gzip
@@ -21,8 +25,8 @@ def restore(prefix: str, output: str) -> None:
 
 def main() -> int:
     restore('news.json.gz.b64', 'news.json')
-    restore('rss.xml.gz.b64', 'rss.xml')
     return 0
+
 
 if __name__ == '__main__':
     raise SystemExit(main())
