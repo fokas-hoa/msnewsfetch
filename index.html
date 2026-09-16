@@ -11,16 +11,29 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <nav class="site-nav" aria-label="Βασικές κατηγορίες">
+    <div class="wrap nav-inner">
+      <a class="nav-brand" href="/" aria-label="MSNewsFetch αρχική"><span class="brand-mark">M</span><span>MSNewsFetch</span></a>
+      <div class="nav-links">
+        <a href="#greece">Ελλάδα</a>
+        <a href="#human-trials">Human trials</a>
+        <a href="#translational-pipeline">Translational</a>
+        <a href="#completed-readouts">Readouts</a>
+        <a href="#feed">Latest updates</a>
+        <a href="#about">About</a>
+      </div>
+    </div>
+  </nav>
+
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
-        <a class="brand" href="/" aria-label="MSNewsFetch αρχική"><span class="brand-mark">M</span><span>MSNewsFetch</span></a>
-        <p class="eyebrow">CURATED MS RESEARCH WATCH</p>
+        <p class="eyebrow hero-eyebrow">CURATED MS RESEARCH WATCH</p>
         <h1>Τι αλλάζει πραγματικά στην έρευνα για <span>επαναμυελίνωση</span></h1>
         <p class="intro">Σύντομες, τεκμηριωμένες ενημερώσεις από όλο το πεδίο της έρευνας για επαναμυελίνωση, επιδιόρθωση μυελίνης και συναφή νευροπροστασία στη ΣΚΠ — από νέους μηχανισμούς και προκλινικά ευρήματα έως κλινικές δοκιμές και αποτελέσματα σε ανθρώπους.</p>
         <div class="hero-actions">
           <a class="btn primary" href="#greece">Τι αφορά την Ελλάδα</a>
-          <a class="btn" href="#pipeline">Όλο το pipeline</a>
+          <a class="btn" href="#human-trials">Όλο το pipeline</a>
           <a class="btn" href="/rss.xml">RSS feed</a>
         </div>
       </div>
@@ -39,7 +52,7 @@
       <div><small>Προσέγγιση</small><strong>Evidence first, όχι hype</strong></div>
     </section>
 
-    <section id="greece" class="greece-section">
+    <section id="greece" class="greece-section anchor-section">
       <div class="section-head">
         <div>
           <p class="eyebrow">ΓΙΑ ΑΣΘΕΝΕΙΣ ΣΤΗΝ ΕΛΛΑΔΑ</p>
@@ -50,7 +63,7 @@
       <div id="greece-news" class="greece-grid" aria-live="polite"></div>
     </section>
 
-    <section id="pipeline" class="pipeline-section">
+    <section id="human-trials" class="pipeline-section anchor-section">
       <div class="section-head">
         <div>
           <p class="eyebrow">ACTIVE / UPCOMING HUMAN TRIALS</p>
@@ -61,7 +74,7 @@
       <div id="pipeline" class="pipeline"></div>
     </section>
 
-    <section class="translational-section">
+    <section id="translational-pipeline" class="translational-section anchor-section">
       <div class="section-head">
         <div>
           <p class="eyebrow">TRANSLATIONAL PIPELINE</p>
@@ -72,14 +85,14 @@
       <div id="translational" class="pipeline translational"></div>
     </section>
 
-    <section class="readouts-section">
+    <section id="completed-readouts" class="readouts-section anchor-section">
       <div class="section-head">
         <div><p class="eyebrow">COMPLETED / KEY READOUTS</p><h2>Ολοκληρωμένες μελέτες και σημαντικά αποτελέσματα</h2><p class="section-note">Θετικά, αρνητικά και διακοπέντα προγράμματα — γιατί και οι αποτυχίες είναι μέρος της πραγματικής εικόνας.</p></div>
       </div>
       <div id="readouts" class="pipeline readouts"></div>
     </section>
 
-    <section id="feed" class="feed-section">
+    <section id="feed" class="feed-section anchor-section">
       <div class="section-head feed-head">
         <div><p class="eyebrow">LATEST UPDATES</p><h2>Ροή ενημερώσεων</h2></div>
         <div class="filters" role="group" aria-label="Φίλτρα">
@@ -92,7 +105,7 @@
       <div id="news" class="news-list" aria-live="polite"></div>
     </section>
 
-    <section class="about">
+    <section id="about" class="about anchor-section">
       <p class="eyebrow">ΓΙΑ ΤΟ FEED</p>
       <h2>Τι είναι το MSNewsFetch</h2>
       <p>Είναι ένα δημόσιο research watch για όλο το πεδίο της επαναμυελίνωσης στη σκλήρυνση κατά πλάκας. Παρακολουθεί χωριστά ενεργές/επερχόμενες ανθρώπινες δοκιμές, translational προγράμματα πριν από την κλινική φάση και ολοκληρωμένα ή αποτυχημένα readouts: νέους μηχανισμούς, OPCs και ολιγοδενδροκύτταρα, biomarkers και imaging, κλινικές δοκιμές, αποτελέσματα αποτελεσματικότητας και ασφάλειας, καθώς και σημαντικά αρνητικά ή null ευρήματα. Οι περιλήψεις ξεχωρίζουν το <strong>τι βρέθηκε</strong> από το <strong>τι σημαίνει κλινικά</strong>, ώστε ένα υποσχόμενο εργαστηριακό εύρημα να μη παρουσιάζεται σαν διαθέσιμη θεραπεία. Η επιλογή και σύνοψη γίνεται με AI-assisted monitoring και κάθε καταχώριση παραπέμπει στην πρωτογενή ή επίσημη πηγή της. Για την Ελλάδα, το site ξεχωρίζει ρητά αν μια διεθνής μελέτη έχει πραγματικό ελληνικό recruiting site ή αν η πρόσβαση είναι μόνο εκτός χώρας.</p>
