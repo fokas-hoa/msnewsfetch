@@ -185,3 +185,38 @@ footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px;backgr
   .greece-card{padding:18px}
   .greece-top{flex-direction:column;gap:4px}
 }
+
+/* Primary category navigation */
+.site-nav{
+  position:sticky;top:0;z-index:100;
+  border-bottom:1px solid rgba(217,194,173,.85);
+  background:rgba(255,253,249,.94);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.nav-inner{height:62px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.nav-brand{display:inline-flex;align-items:center;gap:9px;color:var(--text);text-decoration:none;font-weight:850;white-space:nowrap}
+.nav-brand .brand-mark{width:30px;height:30px;border-radius:9px;font-size:14px}
+.nav-links{display:flex;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links a{
+  flex:0 0 auto;color:var(--muted);text-decoration:none;font-size:13px;font-weight:700;
+  padding:8px 10px;border-radius:9px;white-space:nowrap
+}
+.nav-links a:hover,.nav-links a:focus-visible{color:var(--accent-deep);background:var(--accent-soft);outline:none}
+.hero-eyebrow{margin-top:0}
+.anchor-section{scroll-margin-top:78px}
+
+@media(max-width:850px){
+  .nav-inner{gap:14px}
+  .nav-brand span:last-child{display:none}
+  .nav-links{margin-right:-18px;padding-right:18px}
+}
+@media(max-width:560px){
+  .site-nav{position:sticky}
+  .nav-inner{height:56px}
+  .nav-brand .brand-mark{width:28px;height:28px}
+  .nav-links{margin-right:-12px;padding-right:12px}
+  .nav-links a{font-size:12px;padding:7px 9px}
+  .anchor-section{scroll-margin-top:70px}
+}
