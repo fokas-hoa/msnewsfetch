@@ -16,10 +16,13 @@ from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
 
+from program_identity import load_registry, match_programme
+
 ROOT = Path(__file__).resolve().parents[1]
 MON = ROOT / "monitor"
 CONFIG = json.loads((MON / "discovery_config.json").read_text(encoding="utf-8"))
 WATCH = json.loads((MON / "watchlist.json").read_text(encoding="utf-8"))
+PROGRAM_REGISTRY = load_registry()
 STATE_PATH = MON / "discovery_state.json"
 REPORT_PATH = MON / "discovery_report.json"
 UA = "MSNewsFetch-deep-discovery/1.0 (+https://github.com/fokas-hoa/msnewsfetch)"
@@ -206,9 +209,23 @@ def candidate(source, stable_id, title, url, text, meta, *, evidence, source_qua
     )
     if not c["eligible"] or c["score"] < 5:
         return None
-    if is_known(stable_id, f"{title} {text}"):
+    identity_probe = {
+        "source": source,
+        "id": stable_id,
+        "title": title,
+        "url": url,
+        "meta": meta,
+    }
+    identity = match_programme(identity_probe, PROGRAM_REGISTRY)
+
+    # Do not discard a genuinely new registry record merely because its title
+    # contains a known programme alias. Exact known records and ordinary known
+    # programme mentions are still suppressed here; novel registry IDs survive
+    # to become known_program_new_record during identity enrichment.
+    if is_known(stable_id, f"{title} {text}") and identity.get("identity_status") != "known_program_new_record":
         return None
     return {
+        **identity,
         "source": source,
         "id": stable_id,
         "title": title.strip()[:300],
