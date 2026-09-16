@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MSNewsFetch: επιλεγμένες, τεκμηριωμένες εξελίξεις στην έρευνα επαναμυελίνωσης και νευροπροστασίας στη σκλήρυνση κατά πλάκας.">
+  <meta name="theme-color" content="#f58220">
+  <link rel="alternate" type="application/rss+xml" title="MSNewsFetch RSS" href="/rss.xml">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>MSNewsFetch — Έρευνα επαναμυελίνωσης στη ΣΚΠ</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <a class="brand" href="/" aria-label="MSNewsFetch αρχική"><span class="brand-mark">M</span><span>MSNewsFetch</span></a>
+        <p class="eyebrow">CURATED MS RESEARCH WATCH</p>
+        <h1>Τι αλλάζει πραγματικά στην έρευνα για <span>επαναμυελίνωση</span></h1>
+        <p class="intro">Σύντομες, τεκμηριωμένες ενημερώσεις από όλο το πεδίο της έρευνας για επαναμυελίνωση, επιδιόρθωση μυελίνης και συναφή νευροπροστασία στη ΣΚΠ — από νέους μηχανισμούς και προκλινικά ευρήματα έως κλινικές δοκιμές και αποτελέσματα σε ανθρώπους.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#greece">Τι αφορά την Ελλάδα</a>
+          <a class="btn" href="#pipeline">Όλο το pipeline</a>
+          <a class="btn" href="/rss.xml">RSS feed</a>
+        </div>
+      </div>
+      <aside class="rule-card">
+        <div class="pulse"></div>
+        <strong>Τι θεωρούμε ουσιαστικό νέο</strong>
+        <p>Νέα αποτελέσματα αποτελεσματικότητας ή ασφάλειας, peer‑reviewed δημοσίευση, αλλαγή φάσης μελέτης, διακοπή trial ή σημαντικό ρυθμιστικό ορόσημο.</p>
+      </aside>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="status-strip" aria-label="Κατάσταση feed">
+      <div><small>Τελευταία ενημέρωση</small><strong id="updated">—</strong></div>
+      <div><small>Εστίαση</small><strong>Remyelination / myelin repair</strong></div>
+      <div><small>Προσέγγιση</small><strong>Evidence first, όχι hype</strong></div>
+    </section>
+
+    <section id="greece" class="greece-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">ΓΙΑ ΑΣΘΕΝΕΙΣ ΣΤΗΝ ΕΛΛΑΔΑ</p>
+          <h2>Τι έχει πρακτική σημασία τώρα</h2>
+          <p class="section-note">Πρώτα εμφανίζονται οι εξελίξεις που επηρεάζουν περισσότερο έναν ασθενή στην Ελλάδα: ελληνικά trial sites και πρόσβαση, ευρωπαϊκό status, σημαντικά ανθρώπινα readouts και ελληνική ερευνητική συμμετοχή. Όπου τα δεδομένα είναι μόνο προκλινικά, αυτό επισημαίνεται ρητά.</p>
+        </div>
+      </div>
+      <div id="greece-news" class="greece-grid" aria-live="polite"></div>
+    </section>
+
+    <section id="pipeline" class="pipeline-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">ACTIVE / UPCOMING HUMAN TRIALS</p>
+          <h2>Κλινικές μελέτες που παρακολουθούμε</h2>
+          <p class="section-note">Ενεργές, επερχόμενες ή προσωρινά παγωμένες δοκιμές με άμεσο στόχο myelin repair ή endpoints που συνδέονται στενά με επαναμυελίνωση και νευροεπιδιόρθωση.</p>
+        </div>
+      </div>
+      <div id="pipeline" class="pipeline"></div>
+    </section>
+
+    <section class="translational-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">TRANSLATIONAL PIPELINE</p>
+          <h2>Προγράμματα πριν από την κλινική φάση</h2>
+          <p class="section-note">Εδώ μπαίνουν μόνο προκλινικά προγράμματα με σαφή μηχανισμό, development candidate ή ισχυρή πορεία προς κλινική μετάφραση — όχι κάθε paper σε πειραματόζωα.</p>
+        </div>
+      </div>
+      <div id="translational" class="pipeline translational"></div>
+    </section>
+
+    <section class="readouts-section">
+      <div class="section-head">
+        <div><p class="eyebrow">COMPLETED / KEY READOUTS</p><h2>Ολοκληρωμένες μελέτες και σημαντικά αποτελέσματα</h2><p class="section-note">Θετικά, αρνητικά και διακοπέντα προγράμματα — γιατί και οι αποτυχίες είναι μέρος της πραγματικής εικόνας.</p></div>
+      </div>
+      <div id="readouts" class="pipeline readouts"></div>
+    </section>
+
+    <section id="feed" class="feed-section">
+      <div class="section-head feed-head">
+        <div><p class="eyebrow">LATEST UPDATES</p><h2>Ροή ενημερώσεων</h2></div>
+        <div class="filters" role="group" aria-label="Φίλτρα">
+          <button class="filter active" data-filter="all">Όλα</button>
+          <button class="filter" data-filter="human">Ανθρώπινα δεδομένα</button>
+          <button class="filter" data-filter="preclinical">Προκλινικά</button>
+          <button class="filter" data-filter="negative">Αρνητικά</button>
+        </div>
+      </div>
+      <div id="news" class="news-list" aria-live="polite"></div>
+    </section>
+
+    <section class="about">
+      <p class="eyebrow">ΓΙΑ ΤΟ FEED</p>
+      <h2>Τι είναι το MSNewsFetch</h2>
+      <p>Είναι ένα δημόσιο research watch για όλο το πεδίο της επαναμυελίνωσης στη σκλήρυνση κατά πλάκας. Παρακολουθεί χωριστά ενεργές/επερχόμενες ανθρώπινες δοκιμές, translational προγράμματα πριν από την κλινική φάση και ολοκληρωμένα ή αποτυχημένα readouts: νέους μηχανισμούς, OPCs και ολιγοδενδροκύτταρα, biomarkers και imaging, κλινικές δοκιμές, αποτελέσματα αποτελεσματικότητας και ασφάλειας, καθώς και σημαντικά αρνητικά ή null ευρήματα. Οι περιλήψεις ξεχωρίζουν το <strong>τι βρέθηκε</strong> από το <strong>τι σημαίνει κλινικά</strong>, ώστε ένα υποσχόμενο εργαστηριακό εύρημα να μη παρουσιάζεται σαν διαθέσιμη θεραπεία. Η επιλογή και σύνοψη γίνεται με AI-assisted monitoring και κάθε καταχώριση παραπέμπει στην πρωτογενή ή επίσημη πηγή της. Για την Ελλάδα, το site ξεχωρίζει ρητά αν μια διεθνής μελέτη έχει πραγματικό ελληνικό recruiting site ή αν η πρόσβαση είναι μόνο εκτός χώρας.</p>
+      <p class="disclaimer"><strong>Σημαντικό:</strong> Το περιεχόμενο είναι ενημερωτικό και δεν αποτελεί ιατρική συμβουλή. Πειραματικές θεραπείες ή φάρμακα που μελετώνται για επαναμυελίνωση δεν πρέπει να χρησιμοποιούνται εκτός της εγκεκριμένης τους ένδειξης ή εκτός κλινικής δοκιμής χωρίς ιατρική καθοδήγηση.</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <span>MSNewsFetch</span>
+      <span>Curated research updates • <a href="/rss.xml">RSS</a></span>
+    </div>
+  </footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>
