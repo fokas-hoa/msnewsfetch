@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Publish deterministic MSNewsFetch updates to the dedicated live-data branch.
 
-This script is intentionally conservative and does not generate free-form medical
-claims. It converts monitor/discovery reports into structured public entries and
-updates live-feed.json via the GitHub Contents API. The website can fetch that
-file directly, so research updates do not require a Netlify production deploy.
+The publisher never writes free-form medical conclusions. It converts structured
+monitor/discovery reports into conservative public entries and updates
+`live-feed.json` through the GitHub Contents API. The website fetches that file
+directly, so research updates do not require a Netlify production deploy.
 """
 from __future__ import annotations
 
@@ -25,6 +25,18 @@ DATA_BRANCH = os.environ.get("MSNEWS_LIVE_BRANCH", "live-data")
 DATA_PATH = os.environ.get("MSNEWS_LIVE_PATH", "live-feed.json")
 MAX_EVENTS = 250
 MAX_PROGRAMMES = 100
+MAX_QUARANTINE = 100
+
+PROGRAMME_SOURCES = {
+    "ClinicalTrials.gov",
+    "EU CTIS discovery",
+    "EU CTIS",
+    "ANZCTR",
+    "ISRCTN",
+    "NIH RePORTER",
+    "UKRI Gateway to Research",
+    "CORDIS",
+}
 
 
 def now_iso() -> str:
@@ -93,11 +105,11 @@ def save_remote(repo: str, token: str, data: dict, sha: str | None):
 
 def stage_from_evidence(evidence: str) -> str:
     low = (evidence or "").lower()
-    if "human" in low or "trial" in low:
-        return "Ανθρώπινα δεδομένα"
     if "preprint" in low:
         return "Προδημοσίευση"
-    if "grant" in low or "programme" in low or "program" in low:
+    if "human" in low or "trial" in low:
+        return "Ανθρώπινα δεδομένα"
+    if "grant" in low or "programme" in low or "program" in low or "project" in low:
         return "Μεταφραστικό"
     return "Προκλινικό"
 
@@ -107,10 +119,7 @@ def event_from_change(change: dict, generated_at: str) -> dict:
     after = change.get("after")
     field = str(change.get("field") or "ενημέρωση")
     program = str(change.get("program") or "MS research update")
-    if before is None:
-        summary = f"{field}: {after}."
-    else:
-        summary = f"{field}: {before} → {after}."
+    summary = f"{field}: {after}." if before is None else f"{field}: {before} → {after}."
     greece = change.get("priority") == "greece"
     return {
         "id": stable_id("daily", program, change.get("source"), field, after, change.get("url")),
@@ -149,7 +158,7 @@ def event_from_candidate(c: dict, generated_at: str) -> dict:
         "stage": stage,
         "signal": "Νέο εύρημα",
         "title": title,
-        "summary": f"Αυτόματα εντοπισμένο νέο ερευνητικό σήμα από {source}.",
+        "summary": f"Αυτόματα εντοπισμένο νέο ερευνητικό σήμα από {source}. Evidence: {evidence}.",
         "meaning": note,
         "url": c.get("url") or "",
         "tags": list(dict.fromkeys([str(x) for x in ([c.get("canonical_name")] + (c.get("repair_hits") or []) + (c.get("translation_hits") or [])) if x]))[:8],
@@ -162,8 +171,29 @@ def event_from_candidate(c: dict, generated_at: str) -> dict:
 
 
 def programme_from_candidate(c: dict) -> dict | None:
-    if not (c.get("human_data") or c.get("translation_hits")):
+    """Promote only programme-like sources to pipeline cards.
+
+    Papers/preprints remain visible in Latest Updates but are not invented into
+    development programmes merely because their abstract contains a translation
+    keyword.
+    """
+    source = str(c.get("source") or "")
+    evidence = str(c.get("evidence") or "")
+    quality = str(c.get("source_quality") or "")
+    context = f"{evidence} {quality}".lower()
+    programme_like = (
+        source in PROGRAMME_SOURCES
+        or "trial registry" in context
+        or "clinical-trial registry" in context
+        or "grant database" in context
+        or "project record" in context
+        or "funded research" in context
+    )
+    if not programme_like:
         return None
+    if not (c.get("human_data") or c.get("translation_hits") or c.get("meta", {}).get("grant")):
+        return None
+
     meta = c.get("meta") or {}
     phases = meta.get("phases") or []
     if isinstance(phases, str):
@@ -176,11 +206,11 @@ def programme_from_candidate(c: dict) -> dict | None:
         "id": stable_id("programme", c.get("canonical_id") or c.get("id"), c.get("title")),
         "canonical_id": c.get("canonical_id"),
         "name": c.get("canonical_name") or c.get("title") or c.get("id"),
-        "candidate": c.get("title") if c.get("canonical_name") else (c.get("source") or "Automated discovery"),
+        "candidate": c.get("title") if c.get("canonical_name") else (source or "Automated discovery"),
         "phase": ", ".join(phases) if phases else ("Human trial" if human else "Translational"),
         "status": meta.get("status") or ("Automatically discovered" if human else "Translational signal"),
         "geography": ", ".join(countries[:8]) if countries else "",
-        "evidence": c.get("evidence") or "Research discovery",
+        "evidence": evidence or "Research discovery",
         "nextLabel": "Auto watch",
         "next": "Παρακολουθείται αυτόματα για ουσιαστικές αλλαγές και νέα πρωτογενή δεδομένα.",
         "url": c.get("url") or "",
@@ -197,6 +227,21 @@ def merge_by_id(existing: list[dict], incoming: list[dict], limit: int) -> list[
     values = list(merged.values())
     values.sort(key=lambda x: (x.get("date") or x.get("updated_at") or "", x.get("id") or ""), reverse=True)
     return values[:limit]
+
+
+def quarantine_warnings(data: dict, report: dict, mode: str):
+    generated = report.get("generated_at") or now_iso()
+    incoming = []
+    for warning in report.get("warnings") or []:
+        incoming.append({
+            "id": stable_id("quarantine", mode, warning),
+            "updated_at": generated,
+            "mode": mode,
+            "reason": "source/parser warning",
+            "detail": str(warning)[:1000],
+            "published": False,
+        })
+    data["quarantine"] = merge_by_id(data.get("quarantine") or [], incoming, MAX_QUARANTINE)
 
 
 def apply_daily(data: dict, report: dict):
@@ -238,21 +283,27 @@ def main() -> int:
     if not report_path.exists():
         print(f"No {report_path.name}; nothing to publish.")
         return 0
+    if mode not in {"daily", "weekly"}:
+        raise SystemExit(f"Unknown MSNEWS_PUBLISH_MODE={mode!r}")
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    if report.get("baseline"):
-        print("Baseline run; live feed unchanged.")
-        return 0
-
     token = os.environ["GITHUB_TOKEN"]
     repo = os.environ["GITHUB_REPOSITORY"]
     data, sha = load_remote(repo, token)
-    if mode == "daily":
-        apply_daily(data, report)
-    elif mode == "weekly":
-        apply_weekly(data, report)
-    else:
-        raise SystemExit(f"Unknown MSNEWS_PUBLISH_MODE={mode!r}")
+    before = json.dumps(data, ensure_ascii=False, sort_keys=True)
+
+    # Baseline runs establish source state but do not publish historical items.
+    if not report.get("baseline"):
+        if mode == "daily":
+            apply_daily(data, report)
+        else:
+            apply_weekly(data, report)
+    quarantine_warnings(data, report, mode)
+
+    after = json.dumps(data, ensure_ascii=False, sort_keys=True)
+    if before == after:
+        print("No new live-feed content; no live-data commit created.")
+        return 0
 
     data["version"] = 1
     data["updated_at"] = now_iso()
