@@ -87,7 +87,6 @@ def main() -> int:
     )) is False
 
     # Codex P1 regression: source-class thresholds must remain reachable.
-    # A strong human preprint can pass its deliberately lower preprint confidence floor.
     assert issue_worthy(base(
         source="medRxiv",
         source_class="preprint",
@@ -144,6 +143,37 @@ def main() -> int:
     )
     deduped, suppressed = dedupe_candidates([r1, r2])
     assert len(deduped) == 2 and suppressed == 0
+
+    # Codex P1 regression: a lower-quality Greece-tagged news duplicate must not
+    # hide a gate-eligible primary-registry record with the same discovery title.
+    news = base(
+        id="news-1",
+        source="News discovery",
+        source_class="secondary_news",
+        title="Novel remyelination Phase 2 study",
+        score=8,
+        review_confidence=52,
+        greece_priority=True,
+        human_data=False,
+        translation_hits=["therapy"],
+    )
+    registry = base(
+        id="NCT09999995",
+        source="ClinicalTrials.gov",
+        source_class="primary_registry",
+        title="Novel remyelination Phase 2 study",
+        score=10,
+        review_confidence=95,
+        greece_priority=False,
+        human_data=True,
+        translation_hits=["phase 2"],
+    )
+    assert issue_worthy(news) is False
+    assert issue_worthy(registry) is True
+    deduped, suppressed = dedupe_candidates([news, registry])
+    assert len(deduped) == 1 and suppressed == 1
+    assert deduped[0]["source_class"] == "primary_registry"
+    assert deduped[0]["id"] == "NCT09999995"
 
     print("discovery policy tests: OK")
     return 0
