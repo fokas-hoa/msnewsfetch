@@ -25,6 +25,27 @@
     "multiple sclerosis myelin regeneration",
     "multiple sclerosis neural stem cell"
   ],
+  "ukri_queries": [
+    "multiple sclerosis remyelination",
+    "multiple sclerosis myelin repair",
+    "multiple sclerosis oligodendrocyte",
+    "multiple sclerosis myelin regeneration",
+    "multiple sclerosis neural stem cell"
+  ],
+  "isrctn_queries": [
+    "multiple sclerosis AND remyelination",
+    "multiple sclerosis AND \"myelin repair\"",
+    "multiple sclerosis AND oligodendrocyte",
+    "multiple sclerosis AND \"myelin water fraction\"",
+    "multiple sclerosis AND neurorepair"
+  ],
+  "cordis_queries": [
+    "multiple sclerosis remyelination",
+    "multiple sclerosis myelin repair",
+    "multiple sclerosis oligodendrocyte",
+    "multiple sclerosis myelin regeneration",
+    "multiple sclerosis neural stem cell"
+  ],
   "anzctr_queries": [
     "multiple sclerosis remyelination",
     "multiple sclerosis myelin repair",
