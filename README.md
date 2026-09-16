@@ -24,6 +24,50 @@ Animal, cell, imaging or biomarker findings are labelled as such and are not pre
 
 `app.js` renders the site. `rss.xml` is generated from `items`.
 
+## Monitoring architecture
+
+### Daily known-program monitor
+`.github/workflows/research-monitor.yml` runs daily at `05:23 UTC`.
+
+It watches established programmes already on the radar and compares current source snapshots with the previous run. Sources include ClinicalTrials.gov, EU/CTIS cross-checks, PubMed-style literature discovery and selected official company/lab/programme pages.
+
+Substantive signals include trial status changes, temporary halts/restarts, newly posted results, meaningful schedule changes, primary-outcome changes and the appearance/disappearance of Greek trial sites. If nothing substantive changed, it stays silent.
+
+### Weekly deep discovery
+`.github/workflows/deep-discovery.yml` runs Sundays at `05:37 UTC`.
+
+Its job is different: find **new programmes not already represented in the watchlist**, including work that may not use `remyelination` in its title. It searches or cross-checks:
+
+- ClinicalTrials.gov
+- EU/CTIS discovery pages with official CTIS verification links
+- ANZCTR, including a headless-browser fallback for the browser-oriented registry
+- ISRCTN official XML API
+- Europe PMC
+- bioRxiv and medRxiv
+- NIH RePORTER
+- UKRI Gateway to Research
+- CORDIS public EU project records
+- ECTRIMS / ACTRIMS official discovery pages
+- selected official company, university, tech-transfer and investigator pages
+- secondary news/RSS only as a lead source requiring primary-source verification
+
+Search vocabulary includes remyelination, myelin repair/regeneration, promyelination, oligodendrocyte/OPC differentiation or maturation, myelin water fraction, magnetization transfer, VEP, myelin PET, neurorepair, neural/glial progenitors and related translational terms.
+
+Each source has its own baseline. Adding a new source does **not** generate a flood of historical “new” alerts. Subsequent runs report only newly seen high-signal candidates.
+
+## Evidence gate
+Neither monitor edits `news.json` automatically. A candidate can open a GitHub review issue, but publication requires human review of the primary source.
+
+The review layer explicitly separates:
+- human trial / human results
+- preclinical animal work
+- cell / organoid work
+- imaging or biomarker evidence
+- preprints
+- grants / announced development programmes
+
+Animal, cell, imaging, biomarker or mechanistic findings must never be converted into a claim of proven clinical benefit. Secondary news cannot trigger a review issue merely because it says “remyelination therapy”; it also needs a strong development marker such as a clinical trial, Phase 1/2, first-in-human, IND, GMP or licensing signal.
+
 ## Local validation
 ```bash
 python scripts/validate_site.py
@@ -33,8 +77,6 @@ node --check app.js
 ```
 
 ## GitHub → Netlify automation
-The repository includes `.github/workflows/validate.yml`. Every push or pull request to `main` validates the structured research data, checks that RSS matches `news.json`, and checks JavaScript syntax.
+`.github/workflows/validate.yml` validates structured research data, RSS synchronisation and JavaScript syntax on pushes and pull requests to `main`.
 
-Once this repository is connected to the existing Netlify project **msnewsfetch**, Netlify continuous deployment should publish every successful push to `main`. No separate Netlify deploy workflow is required.
-
-The broad scientific monitoring itself should remain evidence-gated: registry changes can be automated safely, but papers, conference abstracts, company claims and translational programmes still need source-quality and clinical-meaning review before they are published to `news.json`.
+The repository is connected to the Netlify project **msnewsfetch**. Netlify continuous deployment publishes pushes to `main`; no separate deploy workflow is required.
