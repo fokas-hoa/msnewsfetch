@@ -4,21 +4,6 @@ on:
   schedule:
     - cron: '37 5 * * 0'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/deep-discovery.yml'
-      - 'monitor/discovery_config.json'
-      - 'scripts/deep_discovery.py'
-      - 'scripts/discovery_source_utils.py'
-      - 'scripts/ukri_discovery.py'
-      - 'scripts/isrctn_discovery.py'
-      - 'scripts/cordis_discovery.py'
-      - 'scripts/anzctr_discovery_fallback.py'
-      - 'scripts/anzctr_browser_discovery.py'
-      - 'scripts/filter_discovery_report.py'
-      - 'scripts/restore_discovery_state.py'
-      - 'scripts/publish_discovery_issue.py'
 
 permissions:
   contents: read
