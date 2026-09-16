@@ -28,6 +28,8 @@ jobs:
         run: python scripts/validate_site.py
       - name: Validate canonical programme identity registry
         run: python scripts/test_program_identity.py
+      - name: Validate weekly discovery policy
+        run: python scripts/test_discovery_policy.py
       - name: Verify RSS is generated from news.json
         run: python scripts/build_rss.py --check
       - name: Check JavaScript syntax
