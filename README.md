@@ -15,7 +15,7 @@ The site separates:
 Animal, cell, imaging or biomarker findings are labelled as such and are not presented as proven clinical benefit.
 
 ## Data model
-`news.json` is the source of truth. It contains:
+`news.json` is the source of truth for the public site. It contains:
 - `greece`: Greece-priority patient-relevance cards
 - `pipeline`: human trials / announced human development
 - `translational`: named preclinical-to-clinic programmes
@@ -29,7 +29,7 @@ Animal, cell, imaging or biomarker findings are labelled as such and are not pre
 ### Daily known-program monitor
 `.github/workflows/research-monitor.yml` runs daily at `05:23 UTC`.
 
-It watches established programmes already on the radar and compares current source snapshots with the previous run. Sources include ClinicalTrials.gov, EU/CTIS cross-checks, PubMed-style literature discovery and selected official company/lab/programme pages.
+It watches established programmes already on the radar and compares current source snapshots with the previous run. Sources include ClinicalTrials.gov, EU/CTIS cross-checks, literature discovery and selected official company/lab/programme pages.
 
 Substantive signals include trial status changes, temporary halts/restarts, newly posted results, meaningful schedule changes, primary-outcome changes and the appearance/disappearance of Greek trial sites. If nothing substantive changed, it stays silent.
 
@@ -40,7 +40,7 @@ Its job is different: find **new programmes not already represented in the watch
 
 - ClinicalTrials.gov
 - EU/CTIS discovery pages with official CTIS verification links
-- ANZCTR, including a headless-browser fallback for the browser-oriented registry
+- ANZCTR, including browser-compatible and headless-Chrome fallbacks
 - ISRCTN official XML API
 - Europe PMC
 - bioRxiv and medRxiv
@@ -55,6 +55,40 @@ Search vocabulary includes remyelination, myelin repair/regeneration, promyelina
 
 Each source has its own baseline. Adding a new source does **not** generate a flood of historical “new” alerts. Subsequent runs report only newly seen high-signal candidates.
 
+## Canonical programme identity and genealogy
+`monitor/program_registry.json` is the curated identity layer used by weekly discovery.
+
+It distinguishes three things that must not be conflated:
+- **same programme / alias** — e.g. alternate programme names, trial names and known identifiers
+- **new registry record under a known programme** — still reviewable because it may represent a new phase, arm or registration
+- **programme family / related programme** — related, but not automatically the same programme or a successor
+
+For example, `PIPE-307` and the `VISTA` trial name are treated as one canonical programme identity, while distinct metformin trials share a family but are not collapsed into one record. NeuOrphan-related programmes can be family-linked without inventing an unverified successor relationship.
+
+The matching system is deterministic and auditable: exact identifiers first, then curated aliases. It does **not** use opaque embedding similarity for identity decisions.
+
+### Cross-source deduplication
+`scripts/enrich_discovery_report.py` runs after all weekly discovery sources. It:
+- canonicalises known programmes
+- preserves genuinely new registry records under known programmes
+- clusters duplicate unmatched leads using an explainable title-token similarity rule
+- records alternate source sightings instead of opening duplicate review items
+
+## Review confidence
+Every weekly candidate receives a `review_confidence` score from 0–100. This is a **triage / review-priority score, not a probability of scientific truth or clinical benefit**.
+
+The score is source-aware. Primary trial registries start highest; official grant/project sources and peer-reviewed indexes are next; conference records, preprints and secondary-news discovery are progressively more cautious. Human-study context, Greek access and explicit development/remyelination signals can raise priority; preclinical-only model context and secondary sourcing reduce it.
+
+The GitHub issue gate then combines:
+- canonical identity status
+- source class
+- review confidence
+- human versus non-human evidence
+- explicit development signals
+- Greece priority
+
+Ordinary mentions of already-known programmes are routed away from weekly discovery and left to the daily monitor.
+
 ## Evidence gate
 Neither monitor edits `news.json` automatically. A candidate can open a GitHub review issue, but publication requires human review of the primary source.
 
@@ -66,17 +100,42 @@ The review layer explicitly separates:
 - preprints
 - grants / announced development programmes
 
-Animal, cell, imaging, biomarker or mechanistic findings must never be converted into a claim of proven clinical benefit. Secondary news cannot trigger a review issue merely because it says “remyelination therapy”; it also needs a strong development marker such as a clinical trial, Phase 1/2, first-in-human, IND, GMP or licensing signal.
+Animal, cell, imaging, biomarker or mechanistic findings must never be converted into a claim of proven clinical benefit. Secondary news cannot trigger a review issue merely because it says “remyelination therapy”; it also needs stronger development evidence.
 
 ## Local validation
 ```bash
-python scripts/validate_site.py
+python scripts/restore_data.py
 python scripts/build_rss.py
+python scripts/validate_site.py
+python scripts/test_program_identity.py
+python scripts/test_discovery_policy.py
 python scripts/build_rss.py --check
 node --check app.js
+node scripts/test_netlify_ignore.js
 ```
 
-## GitHub → Netlify automation
-`.github/workflows/validate.yml` validates structured research data, RSS synchronisation and JavaScript syntax on pushes and pull requests to `main`.
+## GitHub → Netlify workflow
+The repository is connected to the Netlify project **msnewsfetch**.
 
-The repository is connected to the Netlify project **msnewsfetch**. Netlify continuous deployment publishes pushes to `main`; no separate deploy workflow is required.
+### Branch policy
+- `main` = production
+- `development` = ongoing engineering / review work
+- PRs target `main`
+- development work is batched and merged only when ready, rather than committing repeatedly to production
+
+### Credit-safe production deploys
+Netlify credit-based plans charge successful **production** deploys, while branch/deploy-preview deployments are non-metered. To avoid spending a production deploy on monitoring-only changes, `netlify.toml` uses:
+
+```toml
+ignore = "node ./scripts/netlify_ignore.js"
+```
+
+The helper compares Netlify's cached and current commit refs. A build proceeds only when a change can affect the public output, such as:
+- `index.html`, `app.js`, `styles.css`, favicon or robots
+- compressed public research payloads under `data/`
+- RSS/data build scripts
+- Netlify configuration itself
+
+Changes only to `.github/`, monitoring scripts, identity/watch configuration or documentation are skipped before the Netlify build. If the diff cannot be determined, the helper deliberately fails open and allows the deploy rather than risking a missed public update.
+
+`.github/workflows/validate.yml` runs on both `development` and `main`, and on PRs to `main`. It validates the site data, programme registry, discovery policy, RSS synchronisation, JavaScript and the Netlify credit guard before merge.
