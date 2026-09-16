@@ -10,6 +10,10 @@ on:
       - '.github/workflows/deep-discovery.yml'
       - 'monitor/discovery_config.json'
       - 'scripts/deep_discovery.py'
+      - 'scripts/discovery_source_utils.py'
+      - 'scripts/ukri_discovery.py'
+      - 'scripts/isrctn_discovery.py'
+      - 'scripts/cordis_discovery.py'
       - 'scripts/anzctr_discovery_fallback.py'
       - 'scripts/anzctr_browser_discovery.py'
       - 'scripts/filter_discovery_report.py'
@@ -28,7 +32,7 @@ concurrency:
 jobs:
   discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,8 +46,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/restore_discovery_state.py
-      - name: Deep-scan registries, papers, preprints, grants and discovery pages
+      - name: Deep-scan core registries papers preprints grants and discovery pages
         run: python scripts/deep_discovery.py
+      - name: Scan UKRI grant portfolio
+        run: python scripts/ukri_discovery.py
+      - name: Scan ISRCTN registry
+        run: python scripts/isrctn_discovery.py
+      - name: Scan CORDIS EU project portfolio
+        run: python scripts/cordis_discovery.py
       - name: Retry ANZCTR with browser-compatible HTTP access
         run: python scripts/anzctr_discovery_fallback.py
       - name: Install Selenium for ANZCTR only
