@@ -23,12 +23,27 @@ def candidate_rank(candidate: dict) -> tuple:
     )
 
 
+def distinct_primary_registry_records(a: dict, b: dict) -> bool:
+    """Return True when two candidates are separate primary-registry records.
+
+    Similar titles are not enough to collapse two registry records. Different
+    stable registry IDs remain distinct unless a curated canonical identity
+    explicitly proves that they are the same tracked record/programme.
+    """
+    if a.get("source_class") != "primary_registry" or b.get("source_class") != "primary_registry":
+        return False
+    aid = str(a.get("id") or "").strip().upper()
+    bid = str(b.get("id") or "").strip().upper()
+    return bool(aid and bid and aid != bid)
+
+
 def dedupe_candidates(candidates: list[dict]) -> tuple[list[dict], int]:
     """Deterministic cross-source dedupe.
 
     1. Exact canonical programme matches collapse ordinary mentions.
     2. New registry records for an already-known programme remain separate.
-    3. Unmatched records with highly similar informative title tokens collapse.
+    3. Distinct unmatched primary-registry IDs remain separate even with near-identical titles.
+    4. Other unmatched records with highly similar informative title tokens can collapse.
     """
     kept: list[dict] = []
     suppressed = 0
@@ -42,6 +57,12 @@ def dedupe_candidates(candidates: list[dict]) -> tuple[list[dict], int]:
             # Preserve distinct newly registered trial records even when they belong to
             # an existing programme family.
             if identity_status == "known_program_new_record" or existing.get("identity_status") == "known_program_new_record":
+                continue
+
+            # Never use title similarity alone to collapse two different primary
+            # registry IDs. Phase 2 and Phase 3 records can have almost identical
+            # titles while being operationally distinct trials.
+            if distinct_primary_registry_records(candidate, existing):
                 continue
 
             same_programme = bool(cid and cid == existing.get("canonical_program_id"))
