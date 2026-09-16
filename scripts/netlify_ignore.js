@@ -9,45 +9,58 @@
  */
 const { execFileSync } = require('node:child_process');
 
-const from = process.env.CACHED_COMMIT_REF;
-const to = process.env.COMMIT_REF;
+const PUBLISH_EXACT = new Set([
+  'index.html',
+  'app.js',
+  'styles.css',
+  'favicon.svg',
+  'robots.txt',
+  'netlify.toml',
+  'scripts/netlify_ignore.js',
+  'scripts/restore_data.py',
+  'scripts/build_rss.py',
+]);
 
 function shouldPublish(path) {
-  const exact = new Set([
-    'index.html',
-    'app.js',
-    'styles.css',
-    'favicon.svg',
-    'robots.txt',
-    'netlify.toml',
-    'scripts/netlify_ignore.js',
-    'scripts/restore_data.py',
-    'scripts/build_rss.py',
-  ]);
-  if (exact.has(path)) return true;
+  if (PUBLISH_EXACT.has(path)) return true;
   if (path.startsWith('data/')) return true;
   return false;
 }
 
-if (!from || !to) {
-  console.log('Netlify ignore: missing commit refs; continue build.');
-  process.exit(1);
+function evaluateChangedFiles(changed) {
+  return changed.filter(shouldPublish);
 }
 
-try {
-  const output = execFileSync('git', ['diff', '--name-only', from, to], { encoding: 'utf8' });
-  const changed = output.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-  const publicChanges = changed.filter(shouldPublish);
+function main() {
+  const from = process.env.CACHED_COMMIT_REF;
+  const to = process.env.COMMIT_REF;
 
-  console.log(`Netlify ignore: ${changed.length} changed file(s); ${publicChanges.length} publish-relevant.`);
-  if (publicChanges.length) {
-    console.log('Publish-relevant changes:', publicChanges.join(', '));
-    process.exit(1);
+  if (!from || !to) {
+    console.log('Netlify ignore: missing commit refs; continue build.');
+    return 1;
   }
 
-  console.log('Only CI/monitoring/docs changed; skip Netlify build.');
-  process.exit(0);
-} catch (error) {
-  console.error('Netlify ignore: diff failed; continue build for safety.', error.message);
-  process.exit(1);
+  try {
+    const output = execFileSync('git', ['diff', '--name-only', from, to], { encoding: 'utf8' });
+    const changed = output.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const publicChanges = evaluateChangedFiles(changed);
+
+    console.log(`Netlify ignore: ${changed.length} changed file(s); ${publicChanges.length} publish-relevant.`);
+    if (publicChanges.length) {
+      console.log('Publish-relevant changes:', publicChanges.join(', '));
+      return 1;
+    }
+
+    console.log('Only CI/monitoring/docs changed; skip Netlify build.');
+    return 0;
+  } catch (error) {
+    console.error('Netlify ignore: diff failed; continue build for safety.', error.message);
+    return 1;
+  }
+}
+
+module.exports = { shouldPublish, evaluateChangedFiles, main };
+
+if (require.main === module) {
+  process.exit(main());
 }
