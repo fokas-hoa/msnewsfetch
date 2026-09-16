@@ -1,0 +1,56 @@
+name: Apply Codex discovery fix
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/apply-codex-review-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: development
+          fetch-depth: 0
+      - name: Patch early identity handling
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('scripts/deep_discovery.py')
+          s = p.read_text(encoding='utf-8')
+
+          old = 'from pathlib import Path\n'
+          new = 'from pathlib import Path\n\nfrom program_identity import load_registry, match_programme\n'
+          if 'from program_identity import load_registry, match_programme' not in s:
+              if old not in s:
+                  raise SystemExit('import anchor not found')
+              s = s.replace(old, new, 1)
+
+          old = 'WATCH = json.loads((MON / "watchlist.json").read_text(encoding="utf-8"))\n'
+          new = old + 'PROGRAM_REGISTRY = load_registry()\n'
+          if 'PROGRAM_REGISTRY = load_registry()' not in s:
+              if old not in s:
+                  raise SystemExit('registry anchor not found')
+              s = s.replace(old, new, 1)
+
+          old = '''    if is_known(stable_id, f"{title} {text}"):\n        return None\n    return {\n        "source": source,\n'''
+          new = '''    identity_probe = {\n        "source": source,\n        "id": stable_id,\n        "title": title,\n        "url": url,\n        "meta": meta,\n    }\n    identity = match_programme(identity_probe, PROGRAM_REGISTRY)\n\n    # Do not discard a genuinely new registry record merely because its title\n    # contains a known programme alias. Exact known records and ordinary known\n    # programme mentions are still suppressed here; novel registry IDs survive\n    # to become known_program_new_record during identity enrichment.\n    if is_known(stable_id, f"{title} {text}") and identity.get("identity_status") != "known_program_new_record":\n        return None\n    return {\n        **identity,\n        "source": source,\n'''
+          if old not in s:
+              raise SystemExit('candidate anchor not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/deep_discovery.py
+          git diff --cached --check
+          git commit -m 'Preserve novel registry records under known programmes'
+          git push origin HEAD:development
