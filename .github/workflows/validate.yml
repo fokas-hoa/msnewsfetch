@@ -2,7 +2,7 @@ name: Validate MSNewsFetch
 
 on:
   push:
-    branches: [main]
+    branches: [main, development]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -26,7 +26,11 @@ jobs:
         run: python scripts/build_rss.py
       - name: Validate research data
         run: python scripts/validate_site.py
+      - name: Validate canonical programme identity registry
+        run: python scripts/test_program_identity.py
       - name: Verify RSS is generated from news.json
         run: python scripts/build_rss.py --check
       - name: Check JavaScript syntax
         run: node --check app.js
+      - name: Check Netlify ignore helper syntax
+        run: node --check scripts/netlify_ignore.js
