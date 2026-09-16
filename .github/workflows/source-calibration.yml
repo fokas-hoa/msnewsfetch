@@ -5,15 +5,24 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/source-calibration.yml'
+      - 'scripts/ukri_discovery.py'
+      - 'scripts/isrctn_discovery.py'
+      - 'scripts/cordis_discovery.py'
+      - 'scripts/discovery_source_utils.py'
+      - 'monitor/discovery_config.json'
 
 permissions:
   contents: read
   actions: read
 
+concurrency:
+  group: ms-source-calibration
+  cancel-in-progress: true
+
 jobs:
   calibrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
