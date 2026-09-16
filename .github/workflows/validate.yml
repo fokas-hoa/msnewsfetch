@@ -32,5 +32,5 @@ jobs:
         run: python scripts/build_rss.py --check
       - name: Check JavaScript syntax
         run: node --check app.js
-      - name: Check Netlify ignore helper syntax
-        run: node --check scripts/netlify_ignore.js
+      - name: Validate Netlify credit guard
+        run: node scripts/test_netlify_ignore.js
