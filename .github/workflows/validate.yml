@@ -1,0 +1,28 @@
+name: Validate MSNewsFetch
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate research data
+        run: python scripts/validate_site.py
+      - name: Verify RSS is generated from news.json
+        run: python scripts/build_rss.py --check
+      - name: Check JavaScript syntax
+        run: node --check app.js
