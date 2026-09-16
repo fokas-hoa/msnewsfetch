@@ -15,8 +15,8 @@ from discovery_source_utils import merge_source
 
 PROJECT_LINK_RE = re.compile(r"(?:https?://(?:www\.)?cordis\.europa\.eu)?/project/id/(\d+)", re.I)
 JSON_PROJECT_RE = re.compile(r'"(?:id|projectId)"\s*:\s*"?(\d{5,})"?', re.I)
-MAX_PER_QUERY = 20
-MAX_PROJECTS_PER_RUN = 60
+MAX_PER_QUERY = 10
+MAX_PROJECTS_PER_RUN = 30
 
 
 def discover_ids(raw: bytes) -> list[str]:
@@ -41,18 +41,20 @@ def main() -> int:
     id_seen = set()
 
     for query in dd.CONFIG.get("cordis_queries", []):
+        if len(ordered_ids) >= MAX_PROJECTS_PER_RUN:
+            break
         try:
             params = urllib.parse.urlencode({
                 "q": query,
                 "p": 1,
-                "num": 30,
+                "num": 20,
                 "srt": "Relevance:decreasing",
                 "format": "json",
             })
             raw = dd.req(
                 "https://cordis.europa.eu/search/en?" + params,
                 headers={"Accept": "application/json,text/html;q=0.9,*/*;q=0.8"},
-                timeout=15,
+                timeout=10,
             )
             for project_id in discover_ids(raw)[:MAX_PER_QUERY]:
                 if project_id not in id_seen and len(ordered_ids) < MAX_PROJECTS_PER_RUN:
@@ -64,7 +66,7 @@ def main() -> int:
     for project_id in ordered_ids:
         url = f"https://cordis.europa.eu/project/id/{project_id}"
         try:
-            raw = dd.req(url, headers={"Accept": "text/html,application/xhtml+xml"}, timeout=12)
+            raw = dd.req(url, headers={"Accept": "text/html,application/xhtml+xml"}, timeout=8)
             text, _links = dd.html_text(raw)
             title = project_id
             m = re.search(r"(?:Project|Fact Sheet|Objective)\s+(.{12,260}?)(?:Objective|CORDIS|Project description|$)", text, re.I)
