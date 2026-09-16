@@ -1,0 +1,61 @@
+name: Weekly MS Deep Discovery
+
+on:
+  schedule:
+    - cron: '37 5 * * 0'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deep-discovery.yml'
+      - 'monitor/discovery_config.json'
+      - 'scripts/deep_discovery.py'
+      - 'scripts/restore_discovery_state.py'
+      - 'scripts/publish_discovery_issue.py'
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  group: ms-weekly-deep-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore site data for known-program dedupe
+        run: python scripts/restore_data.py
+      - name: Restore previous discovery state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/restore_discovery_state.py
+      - name: Deep-scan registries, papers, preprints, grants and discovery pages
+        run: python scripts/deep_discovery.py
+      - name: Create review issue only for new high-signal candidates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/publish_discovery_issue.py
+      - name: Save discovery state
+        uses: actions/upload-artifact@v4
+        with:
+          name: msnews-discovery-state
+          path: monitor/discovery_state.json
+          retention-days: 120
+          if-no-files-found: error
+      - name: Save discovery report
+        uses: actions/upload-artifact@v4
+        with:
+          name: msnews-discovery-report
+          path: monitor/discovery_report.json
+          retention-days: 60
+          if-no-files-found: warn
