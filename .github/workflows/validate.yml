@@ -22,6 +22,8 @@ jobs:
           python-version: '3.12'
       - name: Restore structured data
         run: python scripts/restore_data.py
+      - name: Generate RSS from news.json
+        run: python scripts/build_rss.py
       - name: Validate research data
         run: python scripts/validate_site.py
       - name: Verify RSS is generated from news.json
