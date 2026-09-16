@@ -31,6 +31,17 @@
     "multiple sclerosis oligodendrocyte",
     "multiple sclerosis myelin water fraction"
   ],
+  "preprint_categories": {
+    "biorxiv": ["neuroscience"],
+    "medrxiv": ["neurology"]
+  },
+  "news_queries": [
+    "\"multiple sclerosis\" remyelination \"clinical trial\"",
+    "\"multiple sclerosis\" \"myelin repair\" company",
+    "\"multiple sclerosis\" remyelination university",
+    "\"multiple sclerosis\" oligodendrocyte \"first-in-human\"",
+    "\"multiple sclerosis\" remyelination licensing"
+  ],
   "ctis_condition_pages": [
     "https://ctis.eu/conditions/multiple-sclerosis",
     "https://ctis.eu/conditions/progressive-multiple-sclerosis",
