@@ -8,17 +8,39 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from filter_discovery_report import issue_worthy
 from program_identity import load_registry, match_programme, review_confidence, title_similarity
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "monitor" / "discovery_report.json"
 
+SOURCE_PRIORITY = {
+    "primary_registry": 100,
+    "official_programme_page": 90,
+    "official_funding_or_project": 80,
+    "peer_reviewed_index": 70,
+    "official_conference": 60,
+    "preprint": 50,
+    "secondary_news": 20,
+    "other": 10,
+}
+
 
 def candidate_rank(candidate: dict) -> tuple:
+    """Rank the representative retained for a duplicate cluster.
+
+    Gate eligibility is first: if any source in a cluster can legitimately pass
+    the publication/review gate, it must not be hidden behind a lower-quality
+    representative that later gets filtered. Source authority and confidence
+    then outrank convenience signals such as Greece/human tagging.
+    """
+    source_class = candidate.get("source_class") or "other"
     return (
-        bool(candidate.get("greece_priority")),
-        bool(candidate.get("human_data")),
+        bool(issue_worthy(candidate)),
+        SOURCE_PRIORITY.get(source_class, SOURCE_PRIORITY["other"]),
         int(candidate.get("review_confidence", 0)),
+        bool(candidate.get("human_data")),
+        bool(candidate.get("greece_priority")),
         int(candidate.get("score", 0)),
     )
 
@@ -40,10 +62,11 @@ def distinct_primary_registry_records(a: dict, b: dict) -> bool:
 def dedupe_candidates(candidates: list[dict]) -> tuple[list[dict], int]:
     """Deterministic cross-source dedupe.
 
-    1. Exact canonical programme matches collapse ordinary mentions.
-    2. New registry records for an already-known programme remain separate.
-    3. Distinct unmatched primary-registry IDs remain separate even with near-identical titles.
-    4. Other unmatched records with highly similar informative title tokens can collapse.
+    1. Prefer a gate-eligible, more authoritative source as cluster representative.
+    2. Exact canonical programme matches collapse ordinary mentions.
+    3. New registry records for an already-known programme remain separate.
+    4. Distinct unmatched primary-registry IDs remain separate even with near-identical titles.
+    5. Other unmatched records with highly similar informative title tokens can collapse.
     """
     kept: list[dict] = []
     suppressed = 0
@@ -78,6 +101,7 @@ def dedupe_candidates(candidates: list[dict]) -> tuple[list[dict], int]:
                     "id": candidate.get("id"),
                     "title": candidate.get("title"),
                     "review_confidence": candidate.get("review_confidence"),
+                    "source_class": candidate.get("source_class"),
                 })
                 suppressed += 1
                 merged = True
@@ -113,6 +137,9 @@ def main() -> int:
     )
     report.setdefault("policy", {})["review_confidence"] = (
         "review-priority score, not a probability of scientific truth or clinical benefit"
+    )
+    report.setdefault("policy", {})["dedupe_representative"] = (
+        "gate eligibility first, then source authority and review confidence"
     )
 
     REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
