@@ -27,7 +27,7 @@ def record_elements(root):
     best = {}
     for el in root.iter():
         text = element_text(el)
-        if len(text) < 180:
+        if len(text) < 120:
             continue
         ids = {x.upper() for x in ISRCTN_RE.findall(text)}
         if len(ids) != 1:
@@ -51,12 +51,14 @@ def main() -> int:
     candidates = []
     warnings = []
     seen = set()
-    endpoint = "https://www.isrctn.com/api/query/format/internal"
+    # ISRCTN's own API documentation recommends the default XML format for
+    # general consumers; `internal` is a legacy/deprecated compatibility format.
+    endpoint = "https://www.isrctn.com/api/query/format/default"
 
     for query in dd.CONFIG.get("isrctn_queries", []):
         try:
             url = endpoint + "?" + urllib.parse.urlencode({"q": query, "limit": 100})
-            raw = dd.req(url, headers={"Accept": "application/xml,text/xml;q=0.9,*/*;q=0.8"})
+            raw = dd.req(url, headers={"Accept": "application/xml,text/xml;q=0.9,*/*;q=0.8"}, timeout=30)
             root = ET.fromstring(raw)
             for rid, el, text in record_elements(root):
                 if rid in seen:
@@ -69,19 +71,18 @@ def main() -> int:
                     title,
                     f"https://www.isrctn.com/{rid}",
                     text,
-                    {
-                        "human": True,
-                        "greece": "Greece" in text,
-                    },
+                    {"human": True, "greece": "Greece" in text},
                     evidence="Human trial registry record",
-                    source_quality="ISRCTN — WHO primary clinical-trial registry; official XML API",
+                    source_quality="ISRCTN — WHO primary clinical-trial registry; official public XML API",
                 )
                 if c:
                     candidates.append(c)
         except Exception as e:
             warnings.append(f"ISRCTN query failed: {query!r} ({type(e).__name__})")
 
-    result = merge_source("isrctn", candidates, warnings)
+    # New source-state key forces one clean silent baseline after moving away
+    # from the deprecated internal endpoint.
+    result = merge_source("isrctn_default_v1", candidates, warnings)
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
