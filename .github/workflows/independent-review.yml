@@ -1,0 +1,39 @@
+name: Independent PR2 release review
+on:
+  push:
+    branches: ['audit/pr2-release-review']
+    paths: ['.github/workflows/independent-review.yml', 'scripts/test_release_review.py']
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Export reviewed public source
+        run: git archive --format=zip 13fd7433040d90fad96265af3d4587a209e229e8 -o review-source.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr2-pinned-review-source
+          path: review-source.zip
+          retention-days: 7
+      - name: Existing tests at reviewed commit
+        run: |
+          python scripts/restore_data.py
+          python scripts/build_rss.py
+          python scripts/validate_site.py
+          python scripts/test_program_identity.py
+          python scripts/test_discovery_policy.py
+          python scripts/test_live_feed.py
+          python scripts/build_rss.py --check
+          node --check app.js
+          node scripts/test_netlify_ignore.js
+      - name: Independent adversarial integration checks
+        run: |
+          if test -f scripts/test_release_review.py; then python scripts/test_release_review.py; fi
