@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open one GitHub review issue for new weekly discovery candidates."""
+"""Open one GitHub audit issue for new weekly discovery candidates."""
 from __future__ import annotations
 import json, os, urllib.request
 from datetime import datetime, timezone
@@ -24,10 +24,11 @@ def main() -> int:
     today = datetime.now(timezone.utc).date().isoformat()
 
     lines = [
-        "## Weekly deep discovery — human review required",
+        "## Weekly deep discovery — audit trail",
         "",
-        "This issue contains **new high-signal candidates outside ordinary known-programme monitoring**. Nothing here has been published to the site.",
+        "This issue records **new high-signal candidates outside ordinary known-programme monitoring**.",
         "The review-confidence value is a **triage score**, not a probability that a treatment works. Animal, cell, imaging, biomarker and preprint findings are **not clinical benefit**.",
+        "Publication to the live feed is deterministic and evidence-gated; this issue is an audit/review surface, not a manual approval gate.",
         "",
     ]
     greece = [c for c in candidates if c.get("greece_priority")]
@@ -45,6 +46,9 @@ def main() -> int:
             lines.append(f"- **Human data:** {'Yes / human study context' if c['human_data'] else 'No or not established'}")
             lines.append(f"- **Discovery score:** {c['score']}")
             lines.append(f"- **Review confidence:** {c.get('review_confidence', 'n/a')} / 100 ({c.get('review_confidence_band', 'n/a')})")
+            reasons = [str(x) for x in (c.get("review_confidence_reasons") or []) if x]
+            if reasons:
+                lines.append(f"- **Confidence rationale:** {'; '.join(reasons)}")
             if c.get("canonical_program_name"):
                 lines.append(
                     f"- **Canonical identity:** {c['canonical_program_name']} "
@@ -67,7 +71,11 @@ def main() -> int:
             if c.get("model_hits"):
                 lines.append(f"- **Model terms:** {', '.join(c['model_hits'])}")
             if c.get("also_seen_in"):
-                lines.append(f"- **Cross-source duplicate cluster:** also seen in {len(c['also_seen_in'])} other source record(s)")
+                alternate_text = ", ".join(
+                    f"{x.get('source', 'source')} ({x.get('source_class', 'other')}, confidence {x.get('review_confidence', 'n/a')})"
+                    for x in c["also_seen_in"]
+                )
+                lines.append(f"- **Cross-source duplicate cluster:** {alternate_text}")
             lines.append(f"- **Clinical meaning:** {c['clinical_note']}")
             lines.append("")
 
@@ -82,18 +90,18 @@ def main() -> int:
         lines.append("")
 
     lines.extend([
-        "### Review checklist",
+        "### Audit checklist",
         "",
         "- [ ] Confirm the candidate is genuinely MS-relevant and not merely mentioning MS as an exclusion criterion.",
         "- [ ] Confirm canonical identity and whether this is a new programme, a new trial record, a trial name, or only another mention of an existing programme.",
         "- [ ] Verify trial status in the primary registry; resolve registry conflicts.",
         "- [ ] For Greece: verify an actual Greek recruiting site/contact, not merely an EU or country mention.",
         "- [ ] Distinguish human efficacy/safety from imaging, biomarker, animal, cell or mechanistic evidence.",
-        "- [ ] Prefer primary/official sources before publication.",
+        "- [ ] Prefer primary/official sources when interpreting or manually editing curated baseline data.",
     ])
 
     payload = json.dumps({
-        "title": f"Deep discovery review — {today} ({len(candidates)} candidate{'s' if len(candidates) != 1 else ''})",
+        "title": f"Deep discovery audit — {today} ({len(candidates)} candidate{'s' if len(candidates) != 1 else ''})",
         "body": "\n".join(lines),
     }).encode("utf-8")
 
@@ -111,7 +119,7 @@ def main() -> int:
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         issue = json.load(response)
-    print(f"Created discovery review issue #{issue['number']}: {issue['html_url']}")
+    print(f"Created discovery audit issue #{issue['number']}: {issue['html_url']}")
     return 0
 
 
