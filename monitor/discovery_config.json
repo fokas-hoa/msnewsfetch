@@ -1,0 +1,64 @@
+{
+  "lookback_days": 45,
+  "clinicaltrials_queries": [
+    "multiple sclerosis remyelination",
+    "multiple sclerosis myelin repair",
+    "multiple sclerosis oligodendrocyte",
+    "multiple sclerosis myelin water fraction",
+    "multiple sclerosis magnetization transfer remyelination",
+    "multiple sclerosis neurorepair"
+  ],
+  "europepmc_queries": [
+    "\"multiple sclerosis\" AND remyelination",
+    "\"multiple sclerosis\" AND \"myelin repair\"",
+    "\"multiple sclerosis\" AND \"myelin regeneration\"",
+    "\"multiple sclerosis\" AND oligodendrocyte",
+    "\"multiple sclerosis\" AND \"myelin water fraction\"",
+    "\"multiple sclerosis\" AND \"magnetization transfer\"",
+    "\"multiple sclerosis\" AND neurorepair",
+    "\"multiple sclerosis\" AND \"neural stem cell\""
+  ],
+  "nih_reporter_queries": [
+    "multiple sclerosis remyelination",
+    "multiple sclerosis myelin repair",
+    "multiple sclerosis oligodendrocyte",
+    "multiple sclerosis myelin regeneration",
+    "multiple sclerosis neural stem cell"
+  ],
+  "anzctr_queries": [
+    "multiple sclerosis remyelination",
+    "multiple sclerosis myelin repair",
+    "multiple sclerosis oligodendrocyte",
+    "multiple sclerosis myelin water fraction"
+  ],
+  "ctis_condition_pages": [
+    "https://ctis.eu/conditions/multiple-sclerosis",
+    "https://ctis.eu/conditions/progressive-multiple-sclerosis",
+    "https://ctis.eu/conditions/secondary-progressive-multiple-sclerosis",
+    "https://ctis.eu/conditions/primary-progressive-multiple-sclerosis"
+  ],
+  "conference_pages": [
+    {"name":"ECTRIMS / MSToronto","url":"https://ectrims.eu/"},
+    {"name":"ECTRIMS abstract resources","url":"https://ectrims.eu/online-ms-information-resources/online-library-2/"},
+    {"name":"ACTRIMS Forum 2027","url":"https://www.forum.actrims.org/"},
+    {"name":"ACTRIMS Forum 2026 abstracts","url":"https://www.forum2026.actrims.org/"}
+  ],
+  "strong_repair_terms": [
+    "remyelination","remyelinating","myelin repair","myelin regeneration","promyelination","pro-myelinating",
+    "oligodendrocyte differentiation","oligodendrocyte maturation","opc differentiation","opc maturation"
+  ],
+  "linked_terms": [
+    "oligodendrocyte progenitor","glial progenitor","myelin water fraction","magnetization transfer ratio",
+    "magnetisation transfer ratio","myelin pet","visual evoked potential","vep latency","neurorepair",
+    "neural stem cell","induced neural stem","oligodendrocyte progenitor cell","myelin sheath"
+  ],
+  "ms_terms": [
+    "multiple sclerosis","progressive ms","relapsing ms","secondary progressive","primary progressive",
+    "demyelinating disease"
+  ],
+  "model_terms": ["experimental autoimmune encephalomyelitis"," eae ","cuprizone","lysolecithin"],
+  "translation_terms": [
+    "therapeutic","therapy","drug","small molecule","candidate","clinical trial","phase 1","phase i",
+    "phase 2","phase ii","first-in-human","ind-enabling","investigational new drug","gmp","transplant","licensing"
+  ]
+}
