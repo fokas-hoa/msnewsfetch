@@ -26,8 +26,8 @@ def main() -> int:
     lines = [
         "## Weekly deep discovery — human review required",
         "",
-        "This issue contains **new candidates outside the known watchlist**. Nothing here has been published to the site.",
-        "Animal, cell, imaging, biomarker and preprint findings are **not clinical benefit**. Verify primary sources before adding anything to `news.json`.",
+        "This issue contains **new high-signal candidates outside ordinary known-programme monitoring**. Nothing here has been published to the site.",
+        "The review-confidence value is a **triage score**, not a probability that a treatment works. Animal, cell, imaging, biomarker and preprint findings are **not clinical benefit**.",
         "",
     ]
     greece = [c for c in candidates if c.get("greece_priority")]
@@ -40,15 +40,34 @@ def main() -> int:
         for c in items:
             lines.append(f"#### [{c['title']}]({c['url']})")
             lines.append(f"- **Source:** {c['source']} — {c['source_quality']}")
+            lines.append(f"- **Source class:** {c.get('source_class', 'other')}")
             lines.append(f"- **Evidence level:** {c['evidence']}")
             lines.append(f"- **Human data:** {'Yes / human study context' if c['human_data'] else 'No or not established'}")
             lines.append(f"- **Discovery score:** {c['score']}")
+            lines.append(f"- **Review confidence:** {c.get('review_confidence', 'n/a')} / 100 ({c.get('review_confidence_band', 'n/a')})")
+            if c.get("canonical_program_name"):
+                lines.append(
+                    f"- **Canonical identity:** {c['canonical_program_name']} "
+                    f"(`{c.get('canonical_program_id')}`; {c.get('identity_status')}; via {c.get('identity_method')}: {c.get('identity_evidence')})"
+                )
+            else:
+                lines.append("- **Canonical identity:** unmatched — candidate may represent a genuinely new programme")
+            if c.get("family_id"):
+                lines.append(f"- **Programme family:** `{c['family_id']}` (family membership does not imply same programme)")
+            if c.get("relations"):
+                relation_text = "; ".join(
+                    f"{r.get('type')}: {r.get('target') or r.get('label') or ''}".strip()
+                    for r in c["relations"]
+                )
+                lines.append(f"- **Curated relations:** {relation_text}")
             if c.get("repair_hits"):
                 lines.append(f"- **Repair terms:** {', '.join(c['repair_hits'])}")
             if c.get("translation_hits"):
                 lines.append(f"- **Translation signals:** {', '.join(c['translation_hits'])}")
             if c.get("model_hits"):
                 lines.append(f"- **Model terms:** {', '.join(c['model_hits'])}")
+            if c.get("also_seen_in"):
+                lines.append(f"- **Cross-source duplicate cluster:** also seen in {len(c['also_seen_in'])} other source record(s)")
             lines.append(f"- **Clinical meaning:** {c['clinical_note']}")
             lines.append("")
 
@@ -66,7 +85,7 @@ def main() -> int:
         "### Review checklist",
         "",
         "- [ ] Confirm the candidate is genuinely MS-relevant and not merely mentioning MS as an exclusion criterion.",
-        "- [ ] Confirm the programme is not already represented under another name/successor.",
+        "- [ ] Confirm canonical identity and whether this is a new programme, a new trial record, a trial name, or only another mention of an existing programme.",
         "- [ ] Verify trial status in the primary registry; resolve registry conflicts.",
         "- [ ] For Greece: verify an actual Greek recruiting site/contact, not merely an EU or country mention.",
         "- [ ] Distinguish human efficacy/safety from imaging, biomarker, animal, cell or mechanistic evidence.",
