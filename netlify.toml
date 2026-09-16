@@ -1,6 +1,13 @@
 [build]
   command = "python scripts/restore_data.py && python scripts/build_rss.py"
   publish = "."
+  ignore = "node ./scripts/netlify_ignore.js"
+
+# Credit-aware deployment policy:
+# - main remains the production branch.
+# - branch/deploy previews are used for development and review.
+# - monitoring/CI/docs-only commits are stopped by the ignore command before build.
+# - only public-site/data/build-output changes proceed to a production deploy.
 
 [[headers]]
   for = "/*"
