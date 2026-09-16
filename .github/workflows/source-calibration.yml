@@ -1,0 +1,47 @@
+name: Discovery Source Calibration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/source-calibration.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore site data
+        run: python scripts/restore_data.py
+      - name: Restore weekly discovery state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/restore_discovery_state.py
+      - name: Calibrate UKRI
+        run: python scripts/ukri_discovery.py
+      - name: Calibrate ISRCTN
+        run: python scripts/isrctn_discovery.py
+      - name: Calibrate CORDIS
+        run: python scripts/cordis_discovery.py
+      - name: Save updated baseline state
+        uses: actions/upload-artifact@v4
+        with:
+          name: msnews-discovery-state
+          path: monitor/discovery_state.json
+          retention-days: 90
+      - name: Save source calibration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: msnews-source-calibration-report
+          path: monitor/discovery_report.json
+          retention-days: 14
