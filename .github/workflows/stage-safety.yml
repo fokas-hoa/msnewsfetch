@@ -8,12 +8,16 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   stage:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      STAGED_MANIFEST: ${{ runner.temp }}/msnews-safety-files.json
+      STAGED_MANIFEST: /tmp/msnews-safety-files.json
     steps:
       - uses: actions/checkout@v5
         with:
