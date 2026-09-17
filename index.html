@@ -28,9 +28,9 @@
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
-        <p class="eyebrow hero-eyebrow">CURATED MS RESEARCH WATCH</p>
+        <p class="eyebrow hero-eyebrow">AUTOMATED • EVIDENCE-GATED MS RESEARCH WATCH</p>
         <h1>Τι αλλάζει πραγματικά στην έρευνα για <span>επαναμυελίνωση</span></h1>
-        <p class="intro">Σύντομες, τεκμηριωμένες ενημερώσεις από όλο το πεδίο της έρευνας για επαναμυελίνωση, επιδιόρθωση μυελίνης και συναφή νευροπροστασία στη ΣΚΠ — από νέους μηχανισμούς και προκλινικά ευρήματα έως κλινικές δοκιμές και αποτελέσματα σε ανθρώπους.</p>
+        <p class="intro">Αυτόματες, επισημασμένες ενημερώσεις από επιλεγμένες πηγές στο πεδίο της έρευνας για επαναμυελίνωση, επιδιόρθωση μυελίνης και συναφή νευροπροστασία στη ΣΚΠ — από νέους μηχανισμούς και προκλινικά ευρήματα έως κλινικές δοκιμές και αποτελέσματα σε ανθρώπους.</p>
         <div class="hero-actions">
           <a class="btn primary" href="#greece">Τι αφορά την Ελλάδα</a>
           <a class="btn" href="#human-trials">Όλο το pipeline</a>
@@ -40,16 +40,17 @@
       <aside class="rule-card">
         <div class="pulse"></div>
         <strong>Τι θεωρούμε ουσιαστικό νέο</strong>
-        <p>Νέα αποτελέσματα αποτελεσματικότητας ή ασφάλειας, peer‑reviewed δημοσίευση, αλλαγή φάσης μελέτης, διακοπή trial ή σημαντικό ρυθμιστικό ορόσημο.</p>
+        <p>Νέα αποτελέσματα αποτελεσματικότητας ή ασφάλειας, peer‑reviewed δημοσίευση, αλλαγή φάσης μελέτης, διακοπή trial ή σημαντικό ρυθμιστικό ορόσημο. Οι αυτόματες καταχωρίσεις σημειώνονται ως <strong>LIVE AUTO</strong>.</p>
       </aside>
     </div>
   </header>
 
   <main class="wrap">
+    <p id="feed-health" class="section-note" role="status" aria-live="polite">Έλεγχος διαθέσιμου feed…</p>
     <section class="status-strip" aria-label="Κατάσταση feed">
       <div><small>Τελευταία ενημέρωση</small><strong id="updated">—</strong></div>
       <div><small>Εστίαση</small><strong>Remyelination / myelin repair</strong></div>
-      <div><small>Προσέγγιση</small><strong>Evidence first, όχι hype</strong></div>
+      <div><small>Λειτουργία</small><strong>Zero-touch • evidence-gated</strong></div>
     </section>
 
     <section id="greece" class="greece-section anchor-section">
@@ -94,11 +95,12 @@
 
     <section id="feed" class="feed-section anchor-section">
       <div class="section-head feed-head">
-        <div><p class="eyebrow">LATEST UPDATES</p><h2>Ροή ενημερώσεων</h2></div>
+        <div><p class="eyebrow">LATEST UPDATES • LIVE</p><h2>Ροή ενημερώσεων</h2><p class="section-note">Το feed ενημερώνεται αυτόματα από registries, βιβλιογραφία και επιλεγμένες επίσημες πηγές. Οι αυτόματες εγγραφές χρησιμοποιούν συντηρητικά templates και εμφανίζουν πάντα evidence level και ποιότητα πηγής.</p></div>
         <div class="filters" role="group" aria-label="Φίλτρα">
           <button class="filter active" data-filter="all">Όλα</button>
-          <button class="filter" data-filter="human">Ανθρώπινα δεδομένα</button>
+          <button class="filter" data-filter="human">Ανθρώπινες μελέτες</button>
           <button class="filter" data-filter="preclinical">Προκλινικά</button>
+          <button class="filter" data-filter="unknown">Μη προσδιορισμένα</button>
           <button class="filter" data-filter="negative">Αρνητικά</button>
         </div>
       </div>
@@ -108,7 +110,7 @@
     <section id="about" class="about anchor-section">
       <p class="eyebrow">ΓΙΑ ΤΟ FEED</p>
       <h2>Τι είναι το MSNewsFetch</h2>
-      <p>Είναι ένα δημόσιο research watch για όλο το πεδίο της επαναμυελίνωσης στη σκλήρυνση κατά πλάκας. Παρακολουθεί χωριστά ενεργές/επερχόμενες ανθρώπινες δοκιμές, translational προγράμματα πριν από την κλινική φάση και ολοκληρωμένα ή αποτυχημένα readouts: νέους μηχανισμούς, OPCs και ολιγοδενδροκύτταρα, biomarkers και imaging, κλινικές δοκιμές, αποτελέσματα αποτελεσματικότητας και ασφάλειας, καθώς και σημαντικά αρνητικά ή null ευρήματα. Οι περιλήψεις ξεχωρίζουν το <strong>τι βρέθηκε</strong> από το <strong>τι σημαίνει κλινικά</strong>, ώστε ένα υποσχόμενο εργαστηριακό εύρημα να μη παρουσιάζεται σαν διαθέσιμη θεραπεία. Η επιλογή και σύνοψη γίνεται με AI-assisted monitoring και κάθε καταχώριση παραπέμπει στην πρωτογενή ή επίσημη πηγή της. Για την Ελλάδα, το site ξεχωρίζει ρητά αν μια διεθνής μελέτη έχει πραγματικό ελληνικό recruiting site ή αν η πρόσβαση είναι μόνο εκτός χώρας.</p>
+      <p>Είναι ένα δημόσιο, αυτοματοποιημένο research watch για επιλεγμένες πηγές στο πεδίο της επαναμυελίνωσης στη σκλήρυνση κατά πλάκας. Παρακολουθεί χωριστά ενεργές/επερχόμενες ανθρώπινες δοκιμές, translational προγράμματα πριν από την κλινική φάση και ολοκληρωμένα ή αποτυχημένα readouts. Οι registry μεταβολές και τα νέα high-signal research leads μπορούν να εμφανίζονται χωρίς χειροκίνητη έγκριση, αλλά με υποχρεωτικό evidence label, source-quality label και συντηρητικό κλινικό context. Ασαφή ή χαμηλής αξιοπιστίας ευρήματα δεν μπλοκάρουν το feed: παραμένουν εκτός δημοσίευσης μέχρι να υπάρχει επαρκές δομημένο σήμα. Προκλινικά, animal, cell, imaging, biomarker και preprint δεδομένα δεν παρουσιάζονται ως αποδεδειγμένο κλινικό όφελος.</p>
       <p class="disclaimer"><strong>Σημαντικό:</strong> Το περιεχόμενο είναι ενημερωτικό και δεν αποτελεί ιατρική συμβουλή. Πειραματικές θεραπείες ή φάρμακα που μελετώνται για επαναμυελίνωση δεν πρέπει να χρησιμοποιούνται εκτός της εγκεκριμένης τους ένδειξης ή εκτός κλινικής δοκιμής χωρίς ιατρική καθοδήγηση.</p>
     </section>
   </main>
@@ -116,9 +118,9 @@
   <footer>
     <div class="wrap footer-inner">
       <span>MSNewsFetch</span>
-      <span>Curated research updates • <a href="/rss.xml">RSS</a></span>
+      <span>Automated evidence-gated research updates • <a href="/rss.xml">RSS</a></span>
     </div>
   </footer>
-  <script src="/app.js" defer></script>
+  <script src="/app.js?v=release-contract-v2" defer></script>
 </body>
 </html>

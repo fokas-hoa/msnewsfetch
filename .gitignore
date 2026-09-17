@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+dist/
+news.json
+rss.xml
+monitor/state.json
+monitor/discovery_state.json
+monitor/report.json
+monitor/discovery_report.json
+monitor/adopted_targets.json
+monitor/publication_result.json
+browser-test-results/
+source-health-smoke.json

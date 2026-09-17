@@ -12,33 +12,47 @@ on:
       - 'scripts/monitor_research.py'
       - 'scripts/restore_monitor_state.py'
       - 'scripts/publish_monitor_issue.py'
+      - 'scripts/publish_live_feed.py'
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   issues: write
 
 concurrency:
-  group: ms-research-monitor
+  group: ms-live-data-publication
   cancel-in-progress: false
 
 jobs:
   monitor:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Mandatory release tests before collection or publication
+        run: python scripts/build_site.py
       - name: Restore previous monitor state
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/restore_monitor_state.py
       - name: Scan registries, literature and official programme pages
         run: python scripts/monitor_research.py
-      - name: Create review issue only for substantive developments
+      - name: Auto-publish deterministic live updates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MSNEWS_PUBLISH_MODE: daily
+          MSNEWS_LIVE_BRANCH: live-data
+        run: python scripts/publish_live_feed.py
+      - name: Create audit issue for substantive developments
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/publish_monitor_issue.py
@@ -50,6 +64,7 @@ jobs:
           retention-days: 90
           if-no-files-found: error
       - name: Save run report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: msnews-monitor-report

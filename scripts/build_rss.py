@@ -14,8 +14,9 @@ RSS = ROOT / 'rss.xml'
 SITE = 'https://msnewsfetch.netlify.app'
 
 
-def build() -> str:
-    data = json.loads(NEWS.read_text(encoding='utf-8'))
+def build(data=None) -> str:
+    if data is None:
+        data = json.loads(NEWS.read_text(encoding='utf-8'))
     items = sorted(data.get('items', []), key=lambda x: x['date'], reverse=True)
     out = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -27,7 +28,7 @@ def build() -> str:
     ]
     for item in items:
         dt = datetime.strptime(item['date'], '%Y-%m-%d').replace(hour=12, tzinfo=timezone.utc)
-        description = f"{item['summary']} Τι σημαίνει: {item['meaning']}"
+        description = f"{item['summary']} Τι σημαίνει: {item['meaning']} Επίπεδο: {item.get('evidence', '')}. Πηγή: {item.get('sourceQuality', '')}."
         out.extend([
             '<item>',
             f"<title>{escape(item['title'])}</title>",

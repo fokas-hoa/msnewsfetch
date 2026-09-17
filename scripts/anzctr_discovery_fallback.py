@@ -34,39 +34,14 @@ def browser_req(url, *, data=None, headers=None, timeout=45):
 
 
 def main() -> int:
-    dd.req = browser_req
-    warnings: list[str] = []
-    candidates = dd.scan_anzctr(warnings)
-
-    state = json.loads(STATE_PATH.read_text(encoding="utf-8")) if STATE_PATH.exists() else {"version": 1, "seen": {}}
-    report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
-
-    previous = set()
-    for source_keys in state.get("seen", {}).values():
-        previous.update(source_keys)
-
-    candidate_keys = {dd.key(c) for c in candidates}
-    new_candidates = [c for c in candidates if dd.key(c) not in previous]
-
-    state.setdefault("seen", {})["anzctr"] = sorted(set(state.get("seen", {}).get("anzctr", [])) | candidate_keys)
-    STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-    # Remove the first-pass ANZCTR source warning if the browser-UA retry worked.
-    if not warnings:
-        report["warnings"] = [w for w in report.get("warnings", []) if not w.startswith("ANZCTR crawler index unavailable")]
-        report.setdefault("source_candidate_counts", {})["anzctr"] = len(candidates)
-    else:
-        report.setdefault("warnings", []).extend(w for w in warnings if w not in report.get("warnings", []))
-
-    if not report.get("baseline"):
-        existing = {dd.key(c) for c in report.get("candidates", [])}
-        for c in new_candidates:
-            if dd.key(c) not in existing:
-                report.setdefault("candidates", []).append(c)
-                existing.add(dd.key(c))
-
-    REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"ANZCTR fallback candidates={len(candidates)}; new={len(new_candidates)}; warnings={len(warnings)}")
+    from discovery_source_utils import merge_source
+    warnings = []
+    try:
+        dd.req = browser_req
+        candidates = dd.scan_anzctr(warnings)
+    finally:
+        dd.req = _original_req
+    print(json.dumps(merge_source('anzctr', candidates, warnings)))
     return 0
 
 

@@ -1,0 +1,224 @@
+{
+  "version": 1,
+  "description": "Deterministic identity map for known MS remyelination / myelin-repair programmes. Same canonical_id means the same tracked programme. family_id groups related but distinct programmes and must not be used for automatic deduplication.",
+  "programs": [
+    {
+      "canonical_id": "ccmr-two",
+      "canonical_name": "CCMR Two",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT05131828"],
+      "aliases": ["CCMR Two", "CCMR2"],
+      "family_id": "metformin-remyelination"
+    },
+    {
+      "canonical_id": "octopus-metformin",
+      "canonical_name": "OCTOPUS — metformin arm",
+      "entity_type": "human_trial_arm",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["OCTOPUS metformin", "OCTOPUS/metformin", "OCTOPUS trial metformin"],
+      "family_id": "metformin-remyelination"
+    },
+    {
+      "canonical_id": "macsimise-brain",
+      "canonical_name": "MACSiMiSE-BRAIN",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT05893225"],
+      "aliases": ["MACSiMiSE-BRAIN", "MACSiMiSE BRAIN"]
+    },
+    {
+      "canonical_id": "metformin-aging-ms",
+      "canonical_name": "Metformin in aging MS",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT06463743"],
+      "aliases": ["Metformin in aging MS", "metformin aging MS"],
+      "family_id": "metformin-remyelination"
+    },
+    {
+      "canonical_id": "modif-ms",
+      "canonical_name": "MODIF-MS / ifenprodil",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["2023-507874-42-00", "NCT06330077"],
+      "aliases": ["MODIF-MS", "MODIF MS", "ifenprodil"]
+    },
+    {
+      "canonical_id": "recover",
+      "canonical_name": "ReCOVER",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT02521311"],
+      "aliases": ["ReCOVER"]
+    },
+    {
+      "canonical_id": "revive",
+      "canonical_name": "ReVIVE",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT05359653"],
+      "aliases": ["ReVIVE"]
+    },
+    {
+      "canonical_id": "reinforce",
+      "canonical_name": "ReINFORCE",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT06065670"],
+      "aliases": ["ReINFORCE"]
+    },
+    {
+      "canonical_id": "act-1004-1239",
+      "canonical_name": "ACT-1004-1239",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["2025-522922-11-00"],
+      "aliases": ["ACT-1004-1239", "ACT 1004 1239"]
+    },
+    {
+      "canonical_id": "ptd802",
+      "canonical_name": "PTD802",
+      "entity_type": "clinical_development_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["PTD802", "Pheno PTD802", "Pheno Therapeutics PTD802"]
+    },
+    {
+      "canonical_id": "pipe-307",
+      "canonical_name": "PIPE-307 / VISTA",
+      "entity_type": "human_trial_programme",
+      "tracked": true,
+      "identifiers": ["NCT06083753"],
+      "aliases": ["PIPE-307", "PIPE307", "PIPE-307 / VISTA", "VISTA trial", "VISTA study"],
+      "relations": [
+        {
+          "type": "trial_name",
+          "label": "VISTA",
+          "note": "VISTA is treated as a trial name for the PIPE-307 programme, not as a successor programme."
+        }
+      ]
+    },
+    {
+      "canonical_id": "setpoint-ms",
+      "canonical_name": "SetPoint MS Pilot",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT06796504"],
+      "aliases": ["SetPoint MS Pilot", "SetPoint MS", "SetPoint"]
+    },
+    {
+      "canonical_id": "totem-rrms",
+      "canonical_name": "TOTEM-RRMS",
+      "entity_type": "human_trial",
+      "tracked": true,
+      "identifiers": ["NCT03910738"],
+      "aliases": ["TOTEM-RRMS", "TOTEM RRMS"]
+    },
+    {
+      "canonical_id": "lucid-ms",
+      "canonical_name": "Lucid-MS / Lucid-21-302",
+      "entity_type": "clinical_development_programme",
+      "tracked": true,
+      "identifiers": ["NCT06595706"],
+      "aliases": ["Lucid-MS", "Lucid MS", "Lucid-21-302", "Lucid 21-302", "Quantum BioPharma PAD2 inhibitor"]
+    },
+    {
+      "canonical_id": "neuorphan-ditpa",
+      "canonical_name": "NeuOrphan / Dioprotectome / DITPA",
+      "entity_type": "translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["Dioprotectome", "DITPA", "NeuOrphan DITPA", "Steven Petratos DITPA"],
+      "family_id": "neuorphan-remyelination",
+      "relations": [
+        {
+          "type": "related_programme",
+          "target": "neuorphan-odyssey",
+          "note": "Related NeuOrphan programme family; do not automatically collapse the two entities."
+        }
+      ]
+    },
+    {
+      "canonical_id": "neuorphan-odyssey",
+      "canonical_name": "NeuOrphan Odyssey",
+      "entity_type": "translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["NeuOrphan Odyssey", "Odyssey programme", "Odyssey program"],
+      "family_id": "neuorphan-remyelination",
+      "relations": [
+        {
+          "type": "related_programme",
+          "target": "neuorphan-ditpa",
+          "note": "Related NeuOrphan programme family; no automatic successor relationship is asserted."
+        }
+      ]
+    },
+    {
+      "canonical_id": "cn045",
+      "canonical_name": "CN045",
+      "entity_type": "translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["CN045", "CN-045"]
+    },
+    {
+      "canonical_id": "scripps-lairson-combo",
+      "canonical_name": "Scripps / Lairson fixed-dose remyelination combination",
+      "entity_type": "translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["Scripps Lairson fixed-dose remyelination combination", "Lairson remyelination combination", "fixed-dose remyelination combination"]
+    },
+    {
+      "canonical_id": "rutgers-mglur5",
+      "canonical_name": "Rutgers mGluR5 agonists",
+      "entity_type": "translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["Rutgers mGluR5", "mGluR5 agonists", "mGluR5 agonist"]
+    },
+    {
+      "canonical_id": "direct-insc",
+      "canonical_name": "Directly induced neural stem cells",
+      "entity_type": "cell_therapy_translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["directly induced neural stem cells", "directly induced neural stem cell", "induced neural stem cells", "iNSC"]
+    },
+    {
+      "canonical_id": "crispr-human-opc",
+      "canonical_name": "CRISPR-edited human OPC approach",
+      "entity_type": "cell_therapy_translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["CRISPR-edited human OPC", "CRISPR edited human OPC", "CRISPR-edited oligodendrocyte progenitor", "CRISPR edited oligodendrocyte progenitor"]
+    },
+    {
+      "canonical_id": "theophylline-patch",
+      "canonical_name": "Low-dose theophylline transdermal patch",
+      "entity_type": "translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["theophylline patch", "low-dose theophylline transdermal patch", "transdermal theophylline"]
+    },
+    {
+      "canonical_id": "bavisant-braveinms",
+      "canonical_name": "Bavisant / BRAVEinMS",
+      "entity_type": "translational_programme",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["bavisant", "BRAVEinMS", "BRAVE in MS"]
+    },
+    {
+      "canonical_id": "fibronectin-tnfr2",
+      "canonical_name": "Fibronectin / endothelial TNFR2 repair pathway",
+      "entity_type": "preclinical_mechanism",
+      "tracked": true,
+      "identifiers": [],
+      "aliases": ["fibronectin TNFR2", "endothelial TNFR2", "fibronectin remyelination"]
+    }
+  ]
+}
