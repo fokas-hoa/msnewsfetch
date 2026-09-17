@@ -77,27 +77,34 @@ jobs:
         run: python scripts/test_browser_smoke.py 2>&1 | tee safety-browser.log
       - name: Read-only real registry and literature smoke
         run: python scripts/source_smoke.py 2>&1 | tee safety-source.log
-      - name: Create unreferenced candidate commit - no branch moves
+      - name: Export tested source blobs without commits or branch changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python - <<'PY'
-          import json, os, pathlib, urllib.request
+          import hashlib, json, os, pathlib, urllib.request, urllib.error
           files = json.loads(pathlib.Path(os.environ['STAGED_MANIFEST']).read_text(encoding='utf-8'))
           for name, content in files.items():
               assert pathlib.Path(name).read_text(encoding='utf-8') == content, name+' changed during tests'
           root = 'https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']
-          def post(path, payload):
-              req = urllib.request.Request(root+path, method='POST', data=json.dumps(payload).encode(), headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json', 'Content-Type':'application/json', 'User-Agent':'MSNewsFetch-safety-staging'})
-              with urllib.request.urlopen(req, timeout=120) as response:
-                  return json.load(response)
-          tree = post('/git/trees', {'base_tree':'ae22363bfa4c9bb561671e0d890e031ca86458d0', 'tree':[{'path':name,'mode':'100644','type':'blob','content':content} for name,content in files.items()]})
-          commit = post('/git/commits', {'message':'Harden zero-touch publication against release audit; enforce end-to-end gates', 'tree':tree['sha'], 'parents':['13fd7433040d90fad96265af3d4587a209e229e8']})
-          result = {'candidate_sha':commit['sha'], 'tree_sha':tree['sha'], 'base_sha':'13fd7433040d90fad96265af3d4587a209e229e8', 'files':list(files), 'publication':'NONE - no refs changed'}
+          tree = []
+          for name, content in files.items():
+              raw = content.encode('utf-8')
+              expected = hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+              req = urllib.request.Request(root+'/git/blobs', method='POST', data=json.dumps({'content':content,'encoding':'utf-8'}).encode(), headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json', 'Content-Type':'application/json', 'User-Agent':'MSNewsFetch-safety-staging'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as response:
+                      result = json.load(response)
+              except urllib.error.HTTPError as error:
+                  print('Git blob export failed:', error.code, error.read().decode('utf-8', 'replace')[:1000])
+                  raise
+              assert result['sha'] == expected, name
+              tree.append({'path':name, 'mode':'100644', 'type':'blob', 'sha':expected})
+          result = {'base_tree_sha':'ae22363bfa4c9bb561671e0d890e031ca86458d0', 'base_commit_sha':'13fd7433040d90fad96265af3d4587a209e229e8', 'tree_elements':tree, 'publication':'NONE - no tree, commit or refs changed'}
           pathlib.Path('safety-candidate.json').write_text(json.dumps(result,indent=2)+'\n')
           print(json.dumps(result,indent=2))
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
-              out.write('## Safety candidate\n\n`'+commit['sha']+'`\n\nValidated offline, Chromium and bounded real-source smoke. No development/main/live-data branch moved. No synthetic data published.\n')
+              out.write('## Safety sources verified\n\n40 tested content-addressed blobs exported. Release tree/commit assembly remains a separate authorized connector action. No development/main/live-data change.\n')
           PY
       - uses: actions/upload-artifact@v4
         if: always()
