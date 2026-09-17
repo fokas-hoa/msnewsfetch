@@ -1,0 +1,107 @@
+name: Stage PR2 safety candidate
+
+on:
+  push:
+    branches: ['fix/pr2-safety-build']
+    paths: ['.github/workflows/stage-safety.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      STAGED_MANIFEST: ${{ runner.temp }}/msnews-safety-files.json
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: 13fd7433040d90fad96265af3d4587a209e229e8
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Restore SHA-verified safety sources
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, lzma, os, pathlib, urllib.request
+          blobs = [
+              '5be729083ef0af5c55e29ac9c4ac11861cac58e8',
+              '062fee39f09b2221997fb6a546224de244dcaa6b',
+              '08fdf558b17b71b25259478e0afd6a6c709f2329',
+              'c798c2f01097957f5ea9a5cac0a30930f1c7cf47',
+              '26f588d0eed489ded83395a4e91bc94c3310b71c',
+              'ee901e97845d209840e34f4ff3cb376b7a6403f9',
+              '38c5f1e38f396888a160a3f51cc22b10c974d922',
+              'b1719b4e397fc35847df4f1ffbb49d676de26a03',
+              'b4cd342ce499221b962bc6bd7c9541d1a3121006',
+              '36050569d4c763d4c957535e4c83db119f200ad8',
+          ]
+          headers = {'Authorization': 'Bearer '+os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'User-Agent': 'MSNewsFetch-safety-staging'}
+          parts = []
+          for sha in blobs:
+              req = urllib.request.Request('https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs/'+sha, headers=headers)
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  blob = json.load(response)
+              assert blob['encoding'] == 'base64'
+              raw = base64.b64decode(blob['content'])
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == sha
+              parts.append(raw)
+          packed = base64.b64decode(b''.join(parts), validate=True)
+          assert hashlib.sha256(packed).hexdigest() == '657109f0e2fedd1d6648871cf17d044ce2c6871c50a2707a0c5d7f700c314e4a'
+          files = json.loads(lzma.decompress(packed))
+          assert isinstance(files, dict) and len(files) == 40
+          for name, content in files.items():
+              path = pathlib.Path(name)
+              assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts
+              assert isinstance(content, str)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(content, encoding='utf-8')
+          pathlib.Path(os.environ['STAGED_MANIFEST']).write_text(json.dumps(files, ensure_ascii=False), encoding='utf-8')
+          print('Verified and restored', len(files), 'source files; no branch or feed updated.')
+          PY
+      - name: Mandatory complete release gate
+        run: python scripts/build_site.py 2>&1 | tee safety-validation.log
+      - name: Install isolated browser test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --quiet playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Real Chromium DOM smoke - desktop and mobile
+        run: python scripts/test_browser_smoke.py 2>&1 | tee safety-browser.log
+      - name: Read-only real registry and literature smoke
+        run: python scripts/source_smoke.py 2>&1 | tee safety-source.log
+      - name: Create unreferenced candidate commit - no branch moves
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, urllib.request
+          files = json.loads(pathlib.Path(os.environ['STAGED_MANIFEST']).read_text(encoding='utf-8'))
+          for name, content in files.items():
+              assert pathlib.Path(name).read_text(encoding='utf-8') == content, name+' changed during tests'
+          root = 'https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']
+          def post(path, payload):
+              req = urllib.request.Request(root+path, method='POST', data=json.dumps(payload).encode(), headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json', 'Content-Type':'application/json', 'User-Agent':'MSNewsFetch-safety-staging'})
+              with urllib.request.urlopen(req, timeout=120) as response:
+                  return json.load(response)
+          tree = post('/git/trees', {'base_tree':'ae22363bfa4c9bb561671e0d890e031ca86458d0', 'tree':[{'path':name,'mode':'100644','type':'blob','content':content} for name,content in files.items()]})
+          commit = post('/git/commits', {'message':'Harden zero-touch publication against release audit; enforce end-to-end gates', 'tree':tree['sha'], 'parents':['13fd7433040d90fad96265af3d4587a209e229e8']})
+          result = {'candidate_sha':commit['sha'], 'tree_sha':tree['sha'], 'base_sha':'13fd7433040d90fad96265af3d4587a209e229e8', 'files':list(files), 'publication':'NONE - no refs changed'}
+          pathlib.Path('safety-candidate.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result,indent=2))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('## Safety candidate\n\n`'+commit['sha']+'`\n\nValidated offline, Chromium and bounded real-source smoke. No development/main/live-data branch moved. No synthetic data published.\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safety-candidate-evidence
+          path: |
+            safety-candidate.json
+            safety-*.log
+            source-health-smoke.json
+            dist/
+          retention-days: 30
