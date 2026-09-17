@@ -1,151 +1,63 @@
 # MSNewsFetch
 
-Automated, evidence-gated research watch for multiple-sclerosis remyelination / myelin-repair research.
+Greece-first, zero-touch watch of selected MS remyelination / myelin-repair research sources.
 
-## What the homepage prioritises
-The page starts with **“Για ασθενείς στην Ελλάδα”**. This is deliberately different from a generic news feed: it prioritises whether a trial actually has a Greek recruiting site, relevant EU/CTIS status, important human readouts, and Greek research participation. A global `Recruiting` label is never treated as equivalent to access in Greece.
+## Public meaning
 
-## Research structure
-The site separates:
-1. Active / upcoming human trials
-2. Translational pipeline (selected late-preclinical / development programmes)
-3. Completed / failed / key readouts
-4. Latest substantive updates
+The homepage prioritises patient relevance in Greece. Global recruitment, an EU authorisation and a reference to Greece are **not** evidence that a Greek site is recruiting. Local access requires a recent successful primary-registry observation, structured Greek-site information and both global and local `RECRUITING`. Missing/unavailable information is labelled unknown, never “no trial exists”.
 
-Animal, cell, imaging or biomarker findings are labelled as such and are not presented as proven clinical benefit.
+Registration, clinical-study context, clinical results, patient-derived cell work and publication/peer-review status are different fields. A preprint may concern humans. A patient-derived cell experiment is not a clinical trial. Automated templates report source observations, not treatment efficacy or clinical recommendations. Triage confidence is explainable prioritisation, not a probability that a treatment works.
 
-## Two-layer live data architecture
-The deployed site shell is static, but research updates are not limited to the last Netlify production deploy.
+## Branches and publication
 
-- `news.json` is the curated/baseline dataset bundled with a production release.
-- `live-data` is a dedicated Git branch containing `live-feed.json`.
-- `app.js` fetches `live-feed.json` directly from GitHub and merges it with the deployed baseline in the browser.
-- Daily/weekly monitors write structured updates to `live-data` without changing `main`.
+`main` is the released app shell and scheduled workflows. `development` / PR #2 is engineering and preview. `live-data` stores:
 
-This means a new trial status, Greek-site change, result posting or high-signal research discovery can appear on the **same public Netlify URL without a new Netlify production deploy**.
+- `live-feed.json` schema v2: events, trial-ID-keyed observations, discovered programmes, verified monitoring targets, source-health metadata;
+- `rss.xml`: baseline and live events;
+- `monitor-state.json` and `discovery-state.json`: durable collector journals.
 
-The live feed can provide:
-- latest-update cards
-- Greece-priority cards
-- status overrides for already tracked programmes
-- newly discovered human/translational programme cards
+The browser fetches the public GitHub JSON without a token. Updates to `live-data` do not need a Netlify production deploy. The RSS endpoint proxies the same data branch. A single app-shell release is needed to activate this architecture on an older deployment.
 
-If the remote live feed is temporarily unavailable, the site fails safely to the last deployed `news.json` baseline.
+Successful observations, RSS and the corresponding journal are committed **in one Git tree/commit with a non-force ref update**. On a competing writer, the publisher reloads and retries. A same-mode journal advance is rejected for recollection rather than overwriting newer state. A failed write does not acknowledge new observations. The workflows share one non-cancelling publication concurrency group.
 
-## Zero-touch publication policy
-Manual approval is **not required** for normal updates.
+## Automatic collection and gates
 
-Auto-publication is deterministic and source-aware:
-- primary trial-registry changes can publish automatically
-- explicit EU CTIS operational changes/conflicts can publish automatically
-- high-signal human trials/programmes can publish automatically
-- qualifying peer-reviewed, preprint, grant, university/company and translational signals can publish with evidence/source labels
+Daily: `05:23 UTC`. Weekly: Sunday `05:37 UTC`. Schedules run from the default branch; checking in code on development does not activate those schedules. Publishers explicitly reject non-main refs.
 
-The wording is template-based rather than free-form medical interpretation. Every automated entry carries source quality, evidence level and clinical context. Preclinical, animal, cell, imaging, biomarker and preprint findings are never transformed into a claim of proven clinical benefit.
+Daily polling preserves last-good data on timeout, parse error or a malformed HTTP-200 response. CTIS status is selected only from an unambiguous official observation. Mirrors remain separately labelled and never replace an unavailable official observation. Greek site status/contacts are compared, not just site counts. Newly verified trial IDs are adopted from `live-data`, with the first observation carried forward as a polling baseline.
 
-Parser/source failures, ambiguous records without enough structured evidence, and lower-signal discoveries are quarantined/suppressed without blocking the rest of the feed. They are retried later; the user does not have to approve them before other updates go live.
+Weekly discovery covers configured registries, Europe PMC, preprints, grant portfolios, conference/discovery pages and selected programme pages. Every source has a silent initial baseline. The journal separates seen, pending, rejected/quarantined and published records, tracks content fingerprints and policy versions, and reassesses candidates after material/policy changes or an earlier rejection. Exact trial identifiers are distinct from programme families; similar titles do not collapse distinct trial IDs.
 
-## Monitoring architecture
+The final publisher recomputes identity and source-aware triage and validates source provenance and structured observations. Secondary-news/mirror leads alone cannot publish as primary facts. They remain retryable leads; this does not require the user's approval. Other healthy candidates continue automatically. No AI medical-summary API or Codex review is used by these scheduled scripts.
 
-### Daily known-program monitor
-`.github/workflows/research-monitor.yml` runs daily at `05:23 UTC`.
+Issues are **optional post-publication audit notifications**, not approval gates. They are issued only for newly committed events, use a deterministic duplicate marker and are best-effort if GitHub Issues is unavailable. The durable public data transaction is independent of that notification.
 
-It watches established programmes already on the radar and compares current source snapshots with the previous run. Sources include ClinicalTrials.gov, EU/CTIS cross-checks, literature discovery and selected official company/lab/programme pages.
+## Failure and uncertainty handling
 
-Substantive signals include trial status changes, temporary halts/restarts, newly posted results, meaningful schedule changes, primary-outcome changes and the appearance/disappearance of Greek trial sites. If nothing substantive changed, it stays silent. When something changes, the deterministic update is written to `live-data`; a GitHub issue may also be created as an audit trail, but it is not a publication gate.
+The frontend validates remote JSON before merging it into a cloned baseline. It has an eight-second request deadline, cached last-validated-feed fallback and an explicit health message. Trial cards join by stable record IDs, after adding new live cards. Ended/terminated/withdrawn records leave the active section. Scientific readout summaries are retained separately from operational status; other registries remain visible with their own scope.
 
-### Weekly deep discovery
-`.github/workflows/deep-discovery.yml` runs Sundays at `05:37 UTC`.
+Scientific news freshness is independent of a technical poll timestamp. Technical warnings do not become research news. Quarantine is not an automatic “false” judgement. A source that stays inaccessible remains unknown; no completeness or uptime guarantee is made.
 
-Its job is different: find **new programmes not already represented in the watchlist**, including work that may not use `remyelination` in its title. It searches or cross-checks:
+## Release validation
 
-- ClinicalTrials.gov
-- EU/CTIS discovery pages with official CTIS verification links
-- ANZCTR, including browser-compatible and headless-Chrome fallbacks
-- ISRCTN official XML API
-- Europe PMC
-- bioRxiv and medRxiv
-- NIH RePORTER
-- UKRI Gateway to Research
-- CORDIS public EU project records
-- ECTRIMS / ACTRIMS official discovery pages
-- selected official company, university, tech-transfer and investigator pages
-- secondary news/RSS only as a lead source under a stricter development-signal gate
-
-Search vocabulary includes remyelination, myelin repair/regeneration, promyelination, oligodendrocyte/OPC differentiation or maturation, myelin water fraction, magnetization transfer, VEP, myelin PET, neurorepair, neural/glial progenitors and related translational terms.
-
-Each source has its own baseline. Adding a new source does **not** generate a flood of historical “new” alerts. Subsequent runs publish only newly seen high-signal candidates.
-
-## Canonical programme identity and genealogy
-`monitor/program_registry.json` is the curated identity layer used by weekly discovery.
-
-It distinguishes three things that must not be conflated:
-- **same programme / alias** — alternate programme names, trial names and known identifiers
-- **new registry record under a known programme** — still publishable/reviewable because it may represent a new phase, arm or registration
-- **programme family / related programme** — related, but not automatically the same programme or a successor
-
-For example, `PIPE-307` and the `VISTA` trial name are treated as one canonical programme identity, while distinct metformin trials share a family but are not collapsed into one record. NeuOrphan-related programmes can be family-linked without inventing an unverified successor relationship.
-
-The matching system is deterministic and auditable: exact identifiers first, then curated aliases. It does **not** use opaque embedding similarity for identity decisions.
-
-### Cross-source deduplication
-`scripts/enrich_discovery_report.py` runs after all weekly discovery sources. It:
-- canonicalises known programmes
-- preserves genuinely new registry records under known programmes
-- clusters duplicate unmatched leads using an explainable title-token similarity rule
-- records alternate source sightings instead of publishing duplicate items
-
-## Review confidence
-Every weekly candidate receives a `review_confidence` score from 0–100. This is a **triage / review-priority score, not a probability of scientific truth or clinical benefit**.
-
-The score is source-aware. Primary trial registries start highest; official grant/project sources and peer-reviewed indexes are next; conference records, preprints and secondary-news discovery are progressively more cautious. Human-study context, Greek access and explicit development/remyelination signals can raise priority; preclinical-only model context and secondary sourcing reduce it.
-
-The publication gate combines:
-- canonical identity status
-- source class
-- review confidence
-- human versus non-human evidence
-- explicit development signals
-- Greece priority
-
-Ordinary mentions of already-known programmes are routed away from weekly discovery and left to the daily monitor.
-
-## Local validation
-```bash
-python scripts/restore_data.py
-python scripts/build_rss.py
-python scripts/validate_site.py
-python scripts/test_program_identity.py
-python scripts/test_discovery_policy.py
-python scripts/test_live_feed.py
-python scripts/build_rss.py --check
-node --check app.js
-node scripts/test_netlify_ignore.js
+```sh
+python scripts/build_site.py
+# Optional real-browser suite (also required in GitHub CI):
+python -m pip install playwright==1.57.0
+python -m playwright install --with-deps chromium
+python scripts/test_browser_smoke.py
 ```
 
-## Credit-safe GitHub → Netlify workflow
-The repository is connected to the Netlify project **msnewsfetch**.
+`build_site.py` restores the dated curated baseline, assigns explicit trial identities, builds baseline RSS, then runs **the mandatory offline gate**. It includes the original tests, the 19 independent release-contract tests, 29 additional multi-run/boundary/transaction tests, and a Node frontend startup/fallback suite. A failure stops the build. The same build command is used in Netlify, CI and before either scheduled publisher.
 
-### Branch policy
-- `main` = production app shell
-- `development` = ongoing engineering / review work
-- `live-data` = zero-touch research updates
-- PRs target `main`
-- engineering work is batched and merged only when ready, rather than committing repeatedly to production
+GitHub CI additionally runs eight actual Chromium desktop/mobile DOM scenarios, using the built HTML/CSS/JS and mocked research responses. Synthetic data never leave the isolated test environment. `source_smoke.py` is a separate **read-only real-source check**, not a publisher and not a prerequisite on every deploy (upstream availability is not code correctness).
 
-### Credit-safe production deploys
-Netlify credit-based plans charge successful **production** deploys, while branch/deploy-preview deployments are non-metered. To avoid spending a production deploy on monitoring-only changes, `netlify.toml` uses:
+Only seven allowlisted public files are copied to `dist/`. Journals, code, artifacts and synthetic tests cannot enter Netlify's public directory. CSS/JS use content-hash query strings. Monitoring/CI/docs-only changes skip the Netlify build; uncached/manual rebuilds deliberately do not skip. Production release is batched, never a series of micro-deploys.
 
-```toml
-ignore = "node ./scripts/netlify_ignore.js"
-```
+## Scope and limitations
 
-A production build proceeds only when a change can affect the public app shell/output, such as:
-- `index.html`, `app.js`, `styles.css`, favicon or robots
-- compressed public baseline payloads under `data/`
-- RSS/data build scripts
-- Netlify configuration itself
+This is a research watch, **not an exhaustive systematic review or an independently verified clinical-benefit service**. Searches and parsing are bounded and conservative. JS-only registries, inaccessible conference databases, unusual abstract wording and sources outside the configured inventory can be missed. Source-health warnings and stored observation dates make those gaps visible. Official CTIS may not expose parseable current status via HTTP; the system then retains the last good official observation or remains unknown, rather than substituting a mirror. ANZCTR/ISRCTN adoption is limited to their explicitly parseable current status fields.
 
-Changes only to `.github/`, monitoring scripts, identity/watch configuration or documentation are skipped before the Netlify build. Live research updates go to `live-data`, so they do not need a Netlify production deploy at all.
+The historical baseline is dated editorial content, not a claim that every prior item was freshly scientifically re-reviewed during engineering remediation. See `docs/PR2-safety-remediation.md` for the audit acceptance matrix and fixture adjustments.
 
-`.github/workflows/validate.yml` runs on both `development` and `main`, and on PRs to `main`. It validates site data, programme identity, discovery policy, zero-touch live-feed transformation, RSS synchronisation, JavaScript and the Netlify credit guard before merge.
+No paid hosting upgrade, paid review or API-key purchase is required by this code. Hosting suspension or GitHub scheduling restrictions can still prevent service and must be distinguished from a successful code merge.

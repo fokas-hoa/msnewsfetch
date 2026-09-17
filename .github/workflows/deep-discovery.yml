@@ -11,20 +11,25 @@ permissions:
   issues: write
 
 concurrency:
-  group: ms-weekly-deep-discovery
-  cancel-in-progress: true
+  group: ms-live-data-publication
+  cancel-in-progress: false
 
 jobs:
   discover:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Mandatory release tests before collection or publication
+        run: python scripts/build_site.py
       - name: Restore site data for known-program dedupe
         run: python scripts/restore_data.py
       - name: Restore previous discovery state
@@ -56,6 +61,7 @@ jobs:
           MSNEWS_LIVE_BRANCH: live-data
         run: python scripts/publish_live_feed.py
       - name: Create audit issue for new high-signal candidates
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/publish_discovery_issue.py
@@ -67,6 +73,7 @@ jobs:
           retention-days: 90
           if-no-files-found: error
       - name: Save discovery report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: msnews-discovery-report

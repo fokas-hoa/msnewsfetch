@@ -19,6 +19,9 @@ const PUBLISH_EXACT = new Set([
   'scripts/netlify_ignore.js',
   'scripts/restore_data.py',
   'scripts/build_rss.py',
+  'scripts/build_site.py',
+  'scripts/baseline_identity.py',
+  'scripts/research_contract.py',
 ]);
 
 function shouldPublish(path) {
@@ -32,10 +35,12 @@ function evaluateChangedFiles(changed) {
 }
 
 function main() {
+  if(process.env.BRANCH==='live-data') return 0;
+  if(process.env.MSNEWS_FORCE_BUILD==='1') return 1;
   const from = process.env.CACHED_COMMIT_REF;
   const to = process.env.COMMIT_REF;
 
-  if (!from || !to) {
+  if (!from || !to || from===to) {
     console.log('Netlify ignore: missing commit refs; continue build.');
     return 1;
   }

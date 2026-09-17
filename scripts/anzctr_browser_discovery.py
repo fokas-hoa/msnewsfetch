@@ -107,43 +107,10 @@ def main() -> int:
             except Exception:
                 pass
 
-    state = json.loads(STATE_PATH.read_text(encoding="utf-8")) if STATE_PATH.exists() else {"version": 1, "seen": {}}
-    report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
-    previous = set()
-    for source_keys in state.get("seen", {}).values():
-        previous.update(source_keys)
-
-    candidate_keys = {dd.key(c) for c in candidates}
-    new_candidates = [c for c in candidates if dd.key(c) not in previous]
-    state.setdefault("seen", {})["anzctr"] = sorted(set(state.get("seen", {}).get("anzctr", [])) | candidate_keys)
-    STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-    # If Chrome could render at least one genuine ANZCTR search page, the registry
-    # is reachable; direct urllib failures are implementation degradation, not a
-    # registry-health warning. Keep only real browser access/record failures.
-    if accessible_queries:
-        report["warnings"] = [
-            w for w in report.get("warnings", [])
-            if not w.startswith("ANZCTR crawler index unavailable")
-            and not w.startswith("ANZCTR crawler bucket failed")
-        ]
-        report.setdefault("source_candidate_counts", {})["anzctr"] = len(candidates)
-    for warning in browser_warnings:
-        if warning not in report.get("warnings", []):
-            report.setdefault("warnings", []).append(warning)
-
-    if not report.get("baseline"):
-        existing = {dd.key(c) for c in report.get("candidates", [])}
-        for c in new_candidates:
-            if dd.key(c) not in existing:
-                report.setdefault("candidates", []).append(c)
-                existing.add(dd.key(c))
-
-    REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(
-        f"ANZCTR browser queries accessible={accessible_queries}; IDs={len(ids)}; "
-        f"candidates={len(candidates)}; new={len(new_candidates)}; warnings={len(browser_warnings)}"
-    )
+    from discovery_source_utils import merge_source
+    if not accessible_queries and not browser_warnings:
+        browser_warnings.append('ANZCTR browser returned no verifiable search page')
+    print(json.dumps(merge_source('anzctr', candidates, browser_warnings)))
     return 0
 
 

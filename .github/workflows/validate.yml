@@ -1,40 +1,37 @@
 name: Validate MSNewsFetch
-
 on:
   push:
     branches: [main, development]
   pull_request:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
-
+concurrency:
+  group: ms-validation-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Restore structured data
-        run: python scripts/restore_data.py
-      - name: Generate RSS from news.json
-        run: python scripts/build_rss.py
-      - name: Validate research data
-        run: python scripts/validate_site.py
-      - name: Validate canonical programme identity registry
-        run: python scripts/test_program_identity.py
-      - name: Validate weekly discovery policy
-        run: python scripts/test_discovery_policy.py
-      - name: Validate zero-touch live feed transformation
-        run: python scripts/test_live_feed.py
-      - name: Verify RSS is generated from news.json
-        run: python scripts/build_rss.py --check
-      - name: Check JavaScript syntax
-        run: node --check app.js
-      - name: Validate Netlify credit guard
-        run: node scripts/test_netlify_ignore.js
+      - name: Mandatory release gate and allowlisted static build
+        run: python scripts/build_site.py
+      - name: Install isolated browser test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Real Chromium desktop and mobile smoke tests (offline research fixtures)
+        run: python scripts/test_browser_smoke.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validated-static-site-${{ github.run_id }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error

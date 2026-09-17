@@ -15,6 +15,7 @@ from datetime import date, datetime, timedelta, timezone
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
+from research_contract import REGISTRY_ID, POLICY_VERSION, source_record, evidence_context, fingerprint
 
 from program_identity import load_registry, match_programme
 
@@ -191,8 +192,8 @@ def load_state():
         return {"version": 1, "seen": {}}
     try:
         return json.loads(STATE_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return {"version": 1, "seen": {}}
+    except Exception as exc:
+        raise ValueError("Corrupt discovery state; refusing silent baseline reset") from exc
 
 
 def save_state(state):
@@ -222,10 +223,17 @@ def candidate(source, stable_id, title, url, text, meta, *, evidence, source_qua
     # contains a known programme alias. Exact known records and ordinary known
     # programme mentions are still suppressed here; novel registry IDs survive
     # to become known_program_new_record during identity enrichment.
-    if is_known(stable_id, f"{title} {text}") and identity.get("identity_status") != "known_program_new_record":
+    registry_record = bool(REGISTRY_ID.fullmatch(str(stable_id))) and any(
+        x in source.lower() for x in ("clinicaltrials", "ctis", "anzctr", "isrctn"))
+    if registry_record and (str(stable_id).upper() in KNOWN_IDS or identity.get("identity_status") == "known_record"):
         return None
     return {
         **identity,
+        "policy_version": POLICY_VERSION,
+        "source_record": source_record(stable_id, url, text, verified=not meta.get("secondary_only", False)),
+        "study_population": meta.get("study_population") or ("human_registered_trial" if registry_record else ("human_study" if c["human"] else "not_established")),
+        "publication_status": "registration" if registry_record else ("preprint" if c["preprint"] else meta.get("publication_status", "not_established")),
+        "endpoint_classes": meta.get("endpoint_classes", ["not_established"]),
         "source": source,
         "id": stable_id,
         "title": title.strip()[:300],
@@ -286,6 +294,8 @@ def scan_clinicaltrials(warnings):
                         "status": stat.get("overallStatus"),
                         "phases": design.get("phases") or [],
                         "countries": countries,
+                        "greece_locations": [x for x in locations if x.get("country") == "Greece"],
+                        "locations_complete": "locations" in contacts,
                     },
                     evidence="Human trial registration",
                     source_quality="Primary trial registry",
@@ -318,12 +328,13 @@ def scan_europepmc(warnings):
                 pubtypes = result.get("pubTypeList", {}).get("pubType", []) if isinstance(result.get("pubTypeList"), dict) else []
                 text = " ".join([title, abstract, " ".join(pubtypes or [])])
                 is_preprint = result.get("source") == "PPR" or any("preprint" in x.lower() for x in (pubtypes or []))
-                human = any(x in text.lower() for x in ("clinical trial", "randomized", "randomised", "patient", "participants"))
+                context = evidence_context(text, pubtypes or [], preprint=is_preprint)
+                human = context["human_data"]
                 article_id = result.get("id") or result.get("pmid") or rid
                 url = f"https://europepmc.org/article/{result.get('source', 'MED')}/{urllib.parse.quote(str(article_id))}"
                 c = candidate(
                     "Europe PMC", rid, title, url, text,
-                    {"human": human, "preprint": is_preprint, "journal": result.get("journalTitle"), "pub_date": result.get("firstPublicationDate")},
+                    {**context, "human": human, "preprint": is_preprint, "journal": result.get("journalTitle"), "pub_date": result.get("firstPublicationDate")},
                     evidence="Preprint" if is_preprint else "Peer-reviewed/biomedical publication index",
                     source_quality="Preprint index — requires peer-review caution" if is_preprint else "Europe PMC bibliographic record",
                 )
@@ -357,10 +368,11 @@ def scan_preprints(warnings):
                         seen.add(rid)
                         title = result.get("title") or rid
                         text = " ".join([title, result.get("abstract") or "", result.get("category") or ""])
-                        human = server == "medrxiv"
+                        context = evidence_context(text, preprint=True)
+                        human = context["human_data"]
                         c = candidate(
                             server, rid, title, f"https://doi.org/{rid}", text,
-                            {"human": human, "preprint": True, "date": result.get("date"), "category": result.get("category")},
+                            {**context, "human": human, "preprint": True, "date": result.get("date"), "category": result.get("category")},
                             evidence="Human preprint" if human else "Preclinical/basic-science preprint",
                             source_quality="bioRxiv/medRxiv preprint server — not peer reviewed",
                         )
@@ -404,7 +416,7 @@ def scan_reporter(warnings):
                 text = " ".join([title, result.get("abstract_text") or "", " ".join(result.get("pref_terms") or [])])
                 organization = result.get("organization") or {}
                 c = candidate(
-                    "NIH RePORTER", rid, title, "https://reporter.nih.gov/", text,
+                    "NIH RePORTER", rid, title, f"https://reporter.nih.gov/project-details/{urllib.parse.quote(rid)}", text,
                     {
                         "grant": True,
                         "human": False,
@@ -442,8 +454,8 @@ def scan_ctis(warnings):
             title = text[:260] if text else tid
             c = candidate(
                 "EU CTIS discovery", tid, title, official, text,
-                {"human": True, "greece": "Greece" in text},
-                evidence="EU human trial record",
+                {"human": True, "greece": False, "secondary_only": True},
+                evidence="EU trial discovery lead; official record not yet verified",
                 source_quality="Discovery via CTIS.eu; official EU CTIS record linked for verification",
             )
             if c:
@@ -569,68 +581,38 @@ def key(c):
 
 
 def main():
+    from discovery_source_utils import collect_source
     state = load_state()
     baseline = not STATE_PATH.exists() or not state.get("seen")
-    previous = set()
-    for values in state.get("seen", {}).values():
-        previous.update(values)
-
-    warnings = []
+    warnings = []; report_candidates = []; counts = {}
     sources = [
-        ("clinicaltrials", scan_clinicaltrials),
-        ("ctis", scan_ctis),
-        ("europepmc", scan_europepmc),
-        ("preprints", scan_preprints),
-        ("nih_reporter", scan_reporter),
-        ("anzctr", scan_anzctr),
-        ("conferences", scan_conferences),
-        ("news", scan_news_rss),
+        ("clinicaltrials", scan_clinicaltrials), ("ctis", scan_ctis),
+        ("europepmc", scan_europepmc), ("preprints", scan_preprints),
+        ("nih_reporter", scan_reporter), ("anzctr", scan_anzctr),
+        ("conferences", scan_conferences), ("news", scan_news_rss),
     ]
-
-    all_candidates = []
-    counts = {}
-    current_seen = {k: list(v) for k, v in state.get("seen", {}).items()}
     for source_name, func in sources:
+        start_warnings = len(warnings)
         try:
             candidates = func(warnings)
         except Exception as e:
             warnings.append(f"{source_name} scanner crashed ({type(e).__name__}: {e})")
             candidates = []
-        dedup = {key(c): c for c in candidates}
-        candidates = list(dedup.values())
         counts[source_name] = len(candidates)
-        source_keys = sorted(key(c) for c in candidates)
-        current_seen[source_name] = sorted(set(current_seen.get(source_name, [])) | set(source_keys))
-        all_candidates.extend(candidates)
-
-    new_candidates = [c for c in all_candidates if key(c) not in previous]
-    report_candidates = [] if baseline else new_candidates
-    report_candidates.sort(key=lambda x: (not x["greece_priority"], not x["human_data"], -x["score"], x["source"], x["title"]))
-
-    save_state({
-        "version": 1,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-        "seen": current_seen,
-    })
-
+        report_candidates.extend(collect_source(state, source_name, candidates, healthy=len(warnings) == start_warnings))
+    report_candidates.sort(key=lambda x: (not x.get("greece_priority"), not x.get("human_data"), -x.get("score", 0), x["source"], x["title"]))
+    save_state(state)
     report = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "baseline": baseline,
-        "candidate_count": len(report_candidates),
-        "source_candidate_counts": counts,
-        "warnings": warnings,
-        "candidates": report_candidates,
-        "policy": {
-            "auto_publish": False,
-            "animal_cell_imaging_not_clinical_benefit": True,
-            "primary_source_verification_required": True,
-        },
+        "generated_at": datetime.now(timezone.utc).isoformat(), "baseline": baseline,
+        "policy_version": POLICY_VERSION, "candidate_count": len(report_candidates),
+        "source_candidate_counts": counts, "warnings": warnings, "candidates": report_candidates,
+        "policy": {"auto_publish": True, "animal_cell_imaging_not_clinical_benefit": True,
+                   "primary_source_verification_required": True},
     }
-    REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    core_fail = any("ClinicalTrials.gov" in w for w in warnings) and any("Europe PMC" in w for w in warnings)
-    print(f"Baseline={baseline}; new candidates={len(report_candidates)}; warnings={len(warnings)}; source counts={counts}")
-    return 2 if core_fail else 0
+    REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+    print(f"Baseline={baseline}; candidates for reassessment={len(report_candidates)}; warnings={len(warnings)}")
+    # Source outages are recorded; healthy sources must still be able to proceed.
+    return 0
 
 
 if __name__ == "__main__":

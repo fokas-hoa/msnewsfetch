@@ -7,6 +7,8 @@ from news.json by scripts/build_rss.py so there is only one content source of tr
 from __future__ import annotations
 import base64
 import gzip
+import json
+from baseline_identity import migrate
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +27,8 @@ def restore(prefix: str, output: str) -> None:
 
 def main() -> int:
     restore('news.json.gz.b64', 'news.json')
+    path = ROOT / 'news.json'
+    path.write_text(json.dumps(migrate(json.loads(path.read_text())), ensure_ascii=False, indent=2)+'\n')
     return 0
 
 

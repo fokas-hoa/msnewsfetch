@@ -32,7 +32,7 @@ def issue_worthy(c: dict) -> bool:
 
     # Weekly discovery finds NEW programmes. Ordinary mentions of already-known
     # programmes belong to the daily monitor, not to discovery publication.
-    if identity_status in {"known_record", "known_program_mention"}:
+    if identity_status == "known_record" or (identity_status == "known_program_mention" and not c.get("_material_change")):
         return False
 
     # A newly registered human-trial record under an existing canonical programme
@@ -50,10 +50,10 @@ def issue_worthy(c: dict) -> bool:
         return bool(translation) and score >= 8 and reaches(confidence, 70, greece)
 
     if source_class == "peer_reviewed_index":
-        return bool(human or translation) and score >= 9 and reaches(confidence, 72, greece)
+        return ((human and score >= 9) or (strong_development and score >= 8)) and reaches(confidence, 72, greece)
 
     if source_class == "preprint":
-        return strong_development and score >= 10 and reaches(confidence, 55, greece)
+        return strong_development and score >= (10 if human else 8) and reaches(confidence, 55 if human else 50, greece)
 
     if source_class == "official_conference":
         return bool(human or strong_development) and score >= 9 and reaches(confidence, 62, greece)
@@ -74,6 +74,12 @@ def main() -> int:
     raw = data.get("candidates") or []
 
     high = [c for c in raw if issue_worthy(c)]
+    from discovery_source_utils import STATE_PATH, set_disposition
+    if STATE_PATH.exists():
+        state = json.loads(STATE_PATH.read_text())
+        for c in raw:
+            set_disposition(state, c, "pending" if issue_worthy(c) else "rejected", "source-aware policy assessment")
+        STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2)+"\n")
     high.sort(key=lambda x: (
         not x.get("greece_priority"),
         not x.get("human_data"),

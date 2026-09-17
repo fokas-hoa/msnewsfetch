@@ -20,19 +20,25 @@ permissions:
   issues: write
 
 concurrency:
-  group: ms-research-monitor
+  group: ms-live-data-publication
   cancel-in-progress: false
 
 jobs:
   monitor:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Mandatory release tests before collection or publication
+        run: python scripts/build_site.py
       - name: Restore previous monitor state
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,6 +52,7 @@ jobs:
           MSNEWS_LIVE_BRANCH: live-data
         run: python scripts/publish_live_feed.py
       - name: Create audit issue for substantive developments
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/publish_monitor_issue.py
@@ -57,6 +64,7 @@ jobs:
           retention-days: 90
           if-no-files-found: error
       - name: Save run report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: msnews-monitor-report

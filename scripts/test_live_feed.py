@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from research_contract import source_record, POLICY_VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("publish_live_feed", ROOT / "scripts" / "publish_live_feed.py")
@@ -22,6 +23,9 @@ change = {
     "meaning": "Operational status changed; this does not itself establish efficacy.",
     "priority": "normal",
 }
+obs={'id':'NCT06065670','url':change['url'],'status':change['after'],'observation_valid':True}
+obs['provenance']=source_record(obs['id'],obs['url'],{'status':obs['status']})
+change.update(policy_version=POLICY_VERSION,observation_valid=True,observation=obs,provenance=obs['provenance'],record_ids=[obs['id']],trial_id=obs['id'])
 e = mod.event_from_change(change, "2026-09-16 18:00 UTC")
 assert e["stage"] == "Ανθρώπινα δεδομένα"
 assert e["auto_published"] is True

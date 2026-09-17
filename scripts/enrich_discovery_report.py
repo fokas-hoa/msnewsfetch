@@ -88,7 +88,7 @@ def dedupe_candidates(candidates: list[dict]) -> tuple[list[dict], int]:
             if distinct_primary_registry_records(candidate, existing):
                 continue
 
-            same_programme = bool(cid and cid == existing.get("canonical_program_id"))
+            same_programme = bool(cid and cid == existing.get("canonical_program_id") and not (candidate.get("_material_change") or existing.get("_material_change")))
             lexical_duplicate = (
                 not cid
                 and not existing.get("canonical_program_id")

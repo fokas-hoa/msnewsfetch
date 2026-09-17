@@ -1,6 +1,6 @@
 [build]
-  command = "python scripts/restore_data.py && python scripts/build_rss.py"
-  publish = "."
+  command = "python scripts/build_site.py"
+  publish = "dist"
   ignore = "node ./scripts/netlify_ignore.js"
 
 # Credit-aware deployment policy:
@@ -55,3 +55,11 @@
   for = "/robots.txt"
   [headers.values]
     Cache-Control = "public, max-age=3600"
+
+# Daily/weekly transactions update JSON + RSS together on the data branch.
+# Proxying the feed does not rebuild the static site.
+[[redirects]]
+  from = "/rss.xml"
+  to = "https://raw.githubusercontent.com/fokas-hoa/msnewsfetch/live-data/rss.xml"
+  status = 200
+  force = true

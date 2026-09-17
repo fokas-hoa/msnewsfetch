@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from research_contract import REGISTRY_ID
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "monitor" / "program_registry.json"
@@ -77,14 +78,20 @@ def match_programme(candidate: dict, registry: dict | None = None) -> dict:
     if programme:
         return _match_payload(programme, "identifier", stable_id, 100, "known_record")
 
-    # Also recognise known identifiers embedded in title/metadata.
+    # A primary record's own ID wins over citations of older studies in its metadata.
+    # Never turn a new registry ID into an old mention via an embedded identifier.
+    registry_source = any(x in str(candidate.get("source") or "").lower()
+                          for x in ("clinicaltrials", "ctis", "anzctr", "isrctn"))
+    new_registry_record = registry_source and bool(REGISTRY_ID.fullmatch(stable_id))
+
+    # Also recognise known identifiers embedded in NON-registry title/metadata.
     upper_haystack = haystack.upper()
     for identifier, programme in identifier_index.items():
-        if identifier and identifier in upper_haystack:
+        if not new_registry_record and identifier and re.search(r"(?<![A-Z0-9])" + re.escape(identifier) + r"(?![A-Z0-9])", upper_haystack):
             return _match_payload(programme, "embedded_identifier", identifier, 98, "known_program_mention")
 
     for alias, programme in aliases:
-        if _contains_alias(haystack, alias):
+        if _contains_alias(title if new_registry_record else haystack, alias):
             source = str(candidate.get("source") or "").lower()
             is_registry = any(x in source for x in ("clinicaltrials", "ctis", "anzctr", "isrctn"))
             status = "known_program_new_record" if is_registry and stable_id else "known_program_mention"
@@ -119,6 +126,8 @@ def _match_payload(programme: dict, method: str, evidence: str, confidence: int,
 
 def source_class(source: str, source_quality: str = "") -> tuple[str, int]:
     text = f"{source} {source_quality}".lower()
+    if "discovery via ctis.eu" in text or "secondary discovery" in text:
+        return "secondary_news", 34
     if any(x in text for x in ("clinicaltrials.gov", "eu ctis", "anzctr", "isrctn", "primary trial registry", "human trial registry")):
         return "primary_registry", 92
     if "europe pmc" in text and "preprint" not in text:
